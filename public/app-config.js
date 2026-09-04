@@ -1,7 +1,6 @@
-﻿// Конфигурация приложения (переопределяется при деплое).
-// Для сайта на GitHub Pages: укажите здесь адрес бэкенда (туннель/сервер).
-// Текущий туннель: https://cluster-hospitality-boundaries-cod.trycloudflare.com
-// ВНИМАНИЕ: при перезапуске cloudflared URL изменится — обновите это значение!
+﻿// онфигурация приложения (переопределяется при деплое).
+// ля сайта на GitHub Pages: укажите здесь адрес бэкенда (туннель/сервер).
+// LocalTunnel: https://vue-cafe-api.loca.lt (постоянный URL)
 window.APP_CONFIG = {
-  apiUrl: 'https://cluster-hospitality-boundaries-cod.trycloudflare.com/api'
+  apiUrl: 'https://vue-cafe-api.loca.lt/api'
 };
