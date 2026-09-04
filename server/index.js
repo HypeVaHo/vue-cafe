@@ -54,9 +54,14 @@ app.use(cors({
       callback(null, false);
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+
+// Явная обработка preflight (OPTIONS) для всех маршрутов
+app.options('*', cors());
 
 // Health check
 app.get('/api/health', (req, res) => {
