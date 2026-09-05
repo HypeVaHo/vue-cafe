@@ -216,4 +216,130 @@ router.post('/logout', authenticate, (req, res) => {
   res.json({ message: 'Выход выполнен' });
 });
 
+// ============================================================
+// VK Implicit Flow — не требует App Secret
+// ============================================================
+// Фронтенд сам авторизуется в VK (response_type=token), получает
+// access_token в URL fragment и отправляет сюда. Мы проверяем токен
+// через VK API и выдаём свой JWT.
+
+// Параметры для authorize URL (фронтенд использует для построения ссылки)
+router.get('/vk-implicit', (req, res) => {
+  if (!process.env.VK_APP_ID) {
+    return res.status(500).json({ error: 'VK_APP_ID не настроен' });
+  }
+  res.json({
+    client_id: process.env.VK_APP_ID,
+    redirect_uri: process.env.FRONTEND_URL
+      ? `${process.env.FRONTEND_URL}/auth/callback`
+      : 'https://hypevaho.github.io/vue-cafe/auth/callback',
+    response_type: 'token',
+    scope: 'email,photos',
+    v: '5.131',
+    authorize_url: 'https://oauth.vk.com/authorize'
+  });
+});
+
+// Обмен access_token (полученного фронтендом) на наш JWT
+router.post('/vk-token', async (req, res) => {
+  try {
+    const { access_token, user_id } = req.body;
+
+    if (!access_token) {
+      return res.status(400).json({ error: 'access_token обязателен' });
+    }
+
+    // Проверяем токен через VK API
+    const vkParams = {
+      user_ids: user_id || '',
+      fields: 'photo_200',
+      access_token,
+      v: '5.131'
+    };
+
+    const userResponse = await axios.get('https://api.vk.com/method/users.get', {
+      params: vkParams
+    });
+
+    if (userResponse.data.error) {
+      const err = userResponse.data.error;
+      return res.status(401).json({
+        error: 'Невалидный токен VK',
+        detail: err.error_msg
+      });
+    }
+
+    const vkUser = userResponse.data.response?.[0];
+    if (!vkUser) {
+      return res.status(401).json({ error: 'Не удалось получить данные пользователя VK' });
+    }
+
+    const vkId = String(vkUser.id);
+
+    // Поиск или создание пользователя в БД
+    const existingResult = await query(
+      'SELECT * FROM users WHERE vk_id = @vkId',
+      { vkId }
+    );
+
+    let user;
+
+    if (existingResult.recordset.length > 0) {
+      await query(
+        'UPDATE users SET first_name = @firstName, last_name = @lastName, photo_url = @photoUrl WHERE vk_id = @vkId',
+        {
+          firstName: vkUser.first_name,
+          lastName: vkUser.last_name,
+          photoUrl: vkUser.photo_200 ?? null,
+          vkId
+        }
+      );
+      user = existingResult.recordset[0];
+    } else {
+      const pool = await getPool();
+      const insertResult = await pool.request()
+        .input('vkId', sql.BigInt, vkId)
+        .input('firstName', sql.NVarChar, vkUser.first_name)
+        .input('lastName', sql.NVarChar, vkUser.last_name)
+        .input('photoUrl', sql.NVarChar, vkUser.photo_200 ?? null)
+        .query(`
+          INSERT INTO users (vk_id, first_name, last_name, photo_url)
+          OUTPUT INSERTED.id, INSERTED.vk_id, INSERTED.first_name, INSERTED.last_name, INSERTED.photo_url, INSERTED.role, INSERTED.is_super_admin
+          VALUES (@vkId, @firstName, @lastName, @photoUrl)
+        `);
+
+      user = insertResult.recordset[0];
+    }
+
+    // JWT
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        vkId: user.vk_id,
+        role: user.role,
+        is_super_admin: !!user.is_super_admin
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        vk_id: user.vk_id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        photo_url: user.photo_url,
+        role: user.role,
+        is_super_admin: !!user.is_super_admin
+      }
+    });
+  } catch (error) {
+    console.error('VK token exchange error:', error.response?.data || error.message);
+    const detail = error.response?.data?.error?.error_msg || error.message || 'Неизвестная ошибка';
+    res.status(500).json({ error: 'Ошибка авторизации через VK', detail });
+  }
+});
+
 export default router;

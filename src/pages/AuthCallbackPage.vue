@@ -12,8 +12,31 @@ const error = ref(null)
 const processing = ref(true)
 
 onMounted(async () => {
+  // 0. Implicit Flow: access_token в URL fragment (#access_token=...&user_id=...)
+  const hash = window.location.hash
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1))
+    const accessToken = params.get('access_token')
+    const userId = params.get('user_id')
+
+    if (accessToken) {
+      try {
+        const res = await api.vkExchangeToken({ access_token: accessToken, user_id: userId })
+        token = res.token
+        auth.handleAuthCallback(res.token)
+        await auth.init(true)
+        router.replace('/account')
+        return
+      } catch (err) {
+        error.value = err.message || 'Ошибка авторизации через VK'
+        processing.value = false
+        return
+      }
+    }
+  }
+
   // 1. Legacy flow: server-side redirect with ?token=...
-  let token = route.query.token
+  token = token || route.query.token
   let errorParam = route.query.error
 
   // 2. VK ID (OAuth 2.1 + PKCE): VK redirects с ?code=&state=&device_id=
