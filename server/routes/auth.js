@@ -228,11 +228,14 @@ router.get('/vk-implicit', (req, res) => {
   if (!process.env.VK_APP_ID) {
     return res.status(500).json({ error: 'VK_APP_ID не настроен' });
   }
+  // redirect_uri берём из VK_REDIRECT_URI (он указывает на фронтенд — GitHub Pages),
+  // а не из FRONTEND_URL (который в проде localhost).
+  const redirectUri =
+    process.env.VK_REDIRECT_URI ||
+    'https://hypevaho.github.io/vue-cafe/auth/callback';
   res.json({
     client_id: process.env.VK_APP_ID,
-    redirect_uri: process.env.FRONTEND_URL
-      ? `${process.env.FRONTEND_URL}/auth/callback`
-      : 'https://hypevaho.github.io/vue-cafe/auth/callback',
+    redirect_uri: redirectUri,
     response_type: 'token',
     scope: 'email,photos',
     v: '5.131',

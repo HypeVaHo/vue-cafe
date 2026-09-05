@@ -60,8 +60,15 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Явная обработка preflight (OPTIONS) для всех маршрутов
-app.options('*', cors());
+// Маршрут preflight для всех путей (совместимо с Express 5 / path-to-regexp v8).
+// Используем app.all + regex, чтобы не ломаться на '*' как литеральном маршруте.
+app.all(/^\/.*$/, (req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+  } else {
+    next();
+  }
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
