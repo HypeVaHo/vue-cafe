@@ -38,7 +38,10 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // Auth (Implicit Flow — без App Secret)
+  // Auth — VK ID (PKCE, authorization_code)
+  getVkAuthConfig: () => request('/auth/vk'),
+  vkExchange: (data) => request('/auth/vk-exchange', { method: 'POST', body: JSON.stringify(data) }),
+  // Auth — Implicit Flow (без App Secret, резервный вариант)
   getVkImplicitConfig: () => request('/auth/vk-implicit'),
   vkExchangeToken: (data) => request('/auth/vk-token', { method: 'POST', body: JSON.stringify(data) }),
   getCurrentUser: () => request('/auth/me'),
