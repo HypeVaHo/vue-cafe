@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://cool-rocks-dream.loca.lt/api'
+  apiUrl: 'https://petite-parts-kick.loca.lt/api'
 };
