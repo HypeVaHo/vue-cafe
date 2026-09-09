@@ -1,6 +1,4 @@
-﻿// онфигурация приложения (переопределяется при деплое).
-// ля сайта на GitHub Pages: укажите здесь адрес бэкенда (туннель/сервер).
-// Serveo: https://vuecafe-api.serveousercontent.com (стабильный URL)
+// Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://vuecafe-api.serveousercontent.com/api'
+  apiUrl: 'https://quick-rice-start.loca.lt/api'
 };
