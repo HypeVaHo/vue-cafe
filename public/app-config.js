@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://olive-planets-double.loca.lt/api'
+  apiUrl: 'https://cool-rocks-dream.loca.lt/api'
 };
