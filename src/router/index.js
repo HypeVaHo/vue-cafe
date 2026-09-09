@@ -15,7 +15,8 @@ import AuthCallbackPage from '../pages/AuthCallbackPage.vue'
 import { useAuthStore } from '../stores/authStore'
 
 export const router = createRouter({
-  history: createWebHistory(),
+  // BASE_URL = '/vue-cafe/' на GitHub Pages, '/' локально — роутер знает префикс
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'home', component: HomePage },
     { path: '/menu', name: 'menu', component: MenuPage },

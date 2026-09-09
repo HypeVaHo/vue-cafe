@@ -1,10 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vue-cafe</title>
+    <title>СтудFood — Свежая выпечка и напитки</title>
+    <script>
+      // GitHub Pages SPA-фикс: 404.html сохраняет путь и редиректит сюда,
+      // здесь мы восстанавливаем реальный путь до загрузки приложения.
+      (function () {
+        try {
+          var saved = sessionStorage.getItem('spa-redirect');
+          if (saved) {
+            sessionStorage.removeItem('spa-redirect');
+            history.replaceState(null, '', saved);
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <script src="/app-config.js"></script>
   </head>
   <body>
