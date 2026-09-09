@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { api } from '../api/client'
+import { generateCodeVerifier, generateCodeChallenge, generateState, generateDeviceId } from '../utils/pkce'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -17,26 +18,47 @@ onMounted(async () => {
   }
 })
 
+const VKID_AUTHORIZE = 'https://id.vk.ru/authorize'
+
 async function handleVkLogin() {
   loading.value = true
   error.value = null
 
   try {
-    // Implicit Flow: получаем конфиг и редиректим на VK
-    const config = await api.getVkImplicitConfig()
+    // Конфиг VK ID (client_id + redirect_uri на фронтенд — GitHub Pages)
+    const { client_id, redirect_uri } = await api.getVkAuthConfig()
+
+    // PKCE: генерируем и сохраняем в sessionStorage
+    const codeVerifier = generateCodeVerifier()
+    const codeChallenge = await generateCodeChallenge(codeVerifier)
+    const state = generateState()
+
+    // device_id: VK ID требует валидный стабильный device_id при обмене кода.
+    // Передаём свой UUID — VK вернёт его же в redirect.
+    let deviceId = localStorage.getItem('vk_device_id')
+    if (!deviceId) {
+      deviceId = generateDeviceId()
+      localStorage.setItem('vk_device_id', deviceId)
+    }
+
+    sessionStorage.setItem('vk_code_verifier', codeVerifier)
+    sessionStorage.setItem('vk_state', state)
+    sessionStorage.setItem('vk_redirect_uri', redirect_uri)
 
     const params = new URLSearchParams({
-      response_type: 'token',
-      client_id: config.client_id,
-      redirect_uri: config.redirect_uri,
-      scope: config.scope || 'email,photos',
-      v: config.v || '5.131',
-      state: 'vk-' + Date.now()
+      response_type: 'code',
+      client_id,
+      redirect_uri,
+      scope: 'vkid.personal_info,email,phone',
+      code_challenge_method: 'S256',
+      code_challenge: codeChallenge,
+      state,
+      device_id: deviceId
     })
 
-    window.location.href = `${config.authorize_url}?${params.toString()}`
+    window.location.href = `${VKID_AUTHORIZE}?${params.toString()}`
   } catch (err) {
-    error.value = err.message || 'Ошибка подключения к VK'
+    error.value = err.message || 'Ошибка подключения к VK ID'
     loading.value = false
   }
 }
