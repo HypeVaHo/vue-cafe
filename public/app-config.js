@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://fancy-maps-add.loca.lt/api'
+  apiUrl: 'https://beige-parents-sink.loca.lt/api'
 };
