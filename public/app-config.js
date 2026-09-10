@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://smart-goats-strive.loca.lt/api'
+  apiUrl: 'https://sad-colts-wonder.loca.lt/api'
 };
