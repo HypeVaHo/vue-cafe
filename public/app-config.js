@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://odd-hoops-battle.loca.lt/api'
+  apiUrl: 'https://hungry-rings-shout.loca.lt/api'
 };
