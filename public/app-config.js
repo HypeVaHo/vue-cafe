@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://wet-maps-hope.loca.lt/api'
+  apiUrl: 'https://twenty-things-jam.loca.lt/api'
 };
