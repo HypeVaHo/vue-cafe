@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://plain-moments-march.loca.lt/api'
+  apiUrl: 'https://green-regions-warn.loca.lt/api'
 };
