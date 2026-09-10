@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://stale-swans-warn.loca.lt/api'
+  apiUrl: 'https://bitter-spies-guess.loca.lt/api'
 };
