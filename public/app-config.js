@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://rotten-paws-yawn.loca.lt/api'
+  apiUrl: 'https://busy-bags-attack.loca.lt/api'
 };
