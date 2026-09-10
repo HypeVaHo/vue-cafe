@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://twenty-things-jam.loca.lt/api'
+  apiUrl: 'https://light-beers-give.loca.lt/api'
 };
