@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://next-cleveland-nearly-dawn.trycloudflare.com/api'
+  apiUrl: 'https://villas-schema-mechanisms-syracuse.trycloudflare.com/api'
 };
