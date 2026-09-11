@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://translated-coral-overseas-spread.trycloudflare.com/api'
+  apiUrl: 'https://hands-fantastic-london-elect.trycloudflare.com/api'
 };
