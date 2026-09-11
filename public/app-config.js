@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://hunt-humanities-task-surfing.trycloudflare.com/api'
+  apiUrl: 'https://monroe-fur-flush-digest.trycloudflare.com/api'
 };
