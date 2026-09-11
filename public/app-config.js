@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://already-epa-journals-ferry.trycloudflare.com/api'
+  apiUrl: 'https://parents-seed-cheap-incorporated.trycloudflare.com/api'
 };
