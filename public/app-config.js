@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://speech-easy-wars-harvard.trycloudflare.com/api'
+  apiUrl: 'https://includes-neon-feet-zones.trycloudflare.com/api'
 };
