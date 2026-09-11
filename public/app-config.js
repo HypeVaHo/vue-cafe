@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://eight-emus-hope.loca.lt/api'
+  apiUrl: 'https://social-tigers-trade.loca.lt/api'
 };
