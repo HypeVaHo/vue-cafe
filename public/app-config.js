@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://light-bees-sip.loca.lt/api'
+  apiUrl: 'https://tangy-donkeys-wear.loca.lt/api'
 };
