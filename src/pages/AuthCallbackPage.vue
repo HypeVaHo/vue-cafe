@@ -38,14 +38,25 @@ onMounted(async () => {
     }
   }
 
+  // VK ID может вернуть code в query ИЛИ в URL fragment (#code=...&state=...).
+  // Мержим оба источника в единый объект параметров и обрабатываем локально
+  // (router.replace не перезапустил бы onMounted при том же компоненте).
+  let q = { ...route.query }
+  if (!q.code && window.location.hash && window.location.hash.includes('code=')) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    if (hashParams.get('code')) {
+      for (const [key, value] of hashParams.entries()) q[key] = value
+    }
+  }
+
   // 1. Legacy flow: server-side redirect with ?token=...
-  token = token || route.query.token
-  let errorParam = route.query.error
+  token = token || q.token
+  let errorParam = q.error
 
   // 2. VK ID (OAuth 2.1 + PKCE): VK redirects с ?code=&state=&device_id=
-  if (!token && route.query.code) {
-    const code = route.query.code
-    const state = route.query.state || ''
+  if (!token && q.code) {
+    const code = q.code
+    const state = q.state || ''
 
     const savedState = sessionStorage.getItem('vk_state')
     const codeVerifier = sessionStorage.getItem('vk_code_verifier')
@@ -53,7 +64,7 @@ onMounted(async () => {
     const savedRedirectUri = sessionStorage.getItem('vk_redirect_uri')
     // device_id: берём из redirect (VK возвращает наш же), fallback — из localStorage
     const savedDeviceId = localStorage.getItem('vk_device_id') || ''
-    const deviceId = route.query.device_id || savedDeviceId
+    const deviceId = q.device_id || savedDeviceId
 
     if (state !== savedState) {
       errorParam = 'Несовпадение state — возможно, подмена запроса'
@@ -79,8 +90,8 @@ onMounted(async () => {
         return
       }
     }
-  } else if (route.query.error || route.query.error_description) {
-    errorParam = route.query.error_description || route.query.error
+  } else if (q.error || q.error_description) {
+    errorParam = q.error_description || q.error
   }
 
   if (errorParam) {

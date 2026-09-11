@@ -39,6 +39,15 @@ export const router = createRouter({
 // auth.init() кешируется внутри стора — повторных запросов /auth/me не будет.
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  // VK ID может вернуть authorization code не на /auth/callback, а на другой
+  // путь (например, если в настройках приложения VK зарегистрирован корень
+  // сайта). Тогда code остаётся необработанным и пользователь «тихо»
+  // возвращается на сайт гостем. Перенаправляем code в обработчик callback.
+  if (to.query.code && to.path !== '/auth/callback') {
+    return { path: '/auth/callback', query: to.query, replace: true }
+  }
+
   await auth.init()
 
   if (to.path === '/admin' || to.path === '/baker' || to.path === '/account') {
