@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://eminem-attraction-mouth-blond.trycloudflare.com/api'
+  apiUrl: 'https://distinct-class-miles-wrist.trycloudflare.com/api'
 };
