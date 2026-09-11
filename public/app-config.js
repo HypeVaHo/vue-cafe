@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://army-offerings-stable-manufactured.trycloudflare.com/api'
+  apiUrl: 'https://widely-prominent-exam-referral.trycloudflare.com/api'
 };
