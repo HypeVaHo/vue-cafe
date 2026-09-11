@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://social-foxes-sneeze.loca.lt/api'
+  apiUrl: 'https://late-doodles-go.loca.lt/api'
 };
