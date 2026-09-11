@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://mold-substantially-soviet-pixel.trycloudflare.com/api'
+  apiUrl: 'https://adam-tuesday-written-inserted.trycloudflare.com/api'
 };
