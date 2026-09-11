@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://billion-villa-construction-exp.trycloudflare.com/api'
+  apiUrl: 'https://groundwater-handy-simply-rico.trycloudflare.com/api'
 };
