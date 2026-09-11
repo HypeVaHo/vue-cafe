@@ -25,3 +25,7 @@ npm-debug.log*
 
 # Server specific
 server/.env
+
+guard-tunnel.pid
+server-guard.log
+
