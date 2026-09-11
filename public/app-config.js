@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://mean-drinks-say.loca.lt/api'
+  apiUrl: 'https://slowly-jessica-washing-connecticut.trycloudflare.com/api'
 };
