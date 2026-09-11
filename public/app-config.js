@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://rec-kills-soul-relate.trycloudflare.com/api'
+  apiUrl: 'https://dictionary-remaining-kentucky-icons.trycloudflare.com/api'
 };
