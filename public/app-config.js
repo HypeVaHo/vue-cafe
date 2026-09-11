@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://groundwater-handy-simply-rico.trycloudflare.com/api'
+  apiUrl: 'https://suppose-lol-pie-substitute.trycloudflare.com/api'
 };
