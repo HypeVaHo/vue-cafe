@@ -10,6 +10,19 @@ const state = reactive({
   error: null
 })
 
+// Достаём payload JWT (минимум данных для мгновенного «вошли» без сети).
+// Это fallback: если /auth/me недоступен из-за сбоя туннеля, интерфейс
+// всё равно показывает авторизованного пользователя по данным из токена.
+function decodeJwtPayload(token) {
+  try {
+    const base64 = token.split('.')[1]
+    const json = atob(base64.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
 export function useAuthStore() {
   const isAuthenticated = computed(() => !!state.user)
   const isAdmin = computed(() => state.user?.role === 'admin')
@@ -28,8 +41,9 @@ export function useAuthStore() {
       initPromise = null
       return
     }
-    // Кэш используем только если пользователь уже загружен и не форсим.
-    if (initPromise && !force && state.user) return initPromise
+    // Кэш используем только если пользователь уже загружен (не частичный из
+    // JWT-fallback) и не форсим — иначе при сбое туннеля повторяем запрос.
+    if (initPromise && !force && state.user && !state.user._partial) return initPromise
 
     initPromise = (async () => {
       state.loading = true
@@ -37,15 +51,27 @@ export function useAuthStore() {
         state.user = await api.getCurrentUser()
       } catch (error) {
         console.error('Auth init error:', error)
-        // Только реальный 401 (мёртвый токен) подразумевает «разлогинивание».
-        // При сетевом сбое туннеля НЕ зануляем уже установленного пользователя:
-        // иначе интерфейс «слетает» в гостя сразу после успешного входа.
         if (error?.status === 401) {
+          // Реальный 401 — токен мёртв, разлогиниваем.
           localStorage.removeItem(TOKEN_KEY)
           state.user = null
           initPromise = null
+        } else if (!state.user) {
+          // Сетевой сбой туннеля: не разлогиниваем. Показываем минимального
+          // пользователя из JWT-payload, чтобы интерфейс не «слетал» в гостя.
+          const payload = decodeJwtPayload(token)
+          if (payload) {
+            state.user = {
+              id: payload.userId,
+              vk_id: payload.vkId,
+              role: payload.role || 'customer',
+              first_name: payload.first_name || '',
+              last_name: payload.last_name || '',
+              photo_url: payload.photo_url || null,
+              _partial: true // данные восстановлены из токена, не из БД
+            }
+          }
         }
-        // для остальных ошибок оставляем state.user как есть (что было)
       } finally {
         state.loading = false
       }

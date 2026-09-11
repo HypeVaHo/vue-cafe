@@ -11,6 +11,40 @@ function getToken() {
   return localStorage.getItem('auth_token')
 }
 
+// Туннель может кратковременно отвечать 502/503/511 или обрывать соединение.
+// Для идемпотентных GET-запросов делаем до 2 повторов с паузой — это делает
+// интерфейс устойчивым к «морганию» бесплатного туннеля.
+const RETRYABLE_STATUS = new Set([502, 503, 504, 511, 429])
+const RETRY_DELAY_MS = 1200
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function fetchWithRetry(url, options, retries = 2) {
+  let lastError
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options)
+      const isRetryable = RETRYABLE_STATUS.has(response.status)
+      if (isRetryable && attempt < retries) {
+        await sleep(RETRY_DELAY_MS)
+        continue
+      }
+      return response
+    } catch (error) {
+      // Сетевой сбой (fetch бросает TypeError) — повторяем
+      lastError = error
+      if (attempt < retries) {
+        await sleep(RETRY_DELAY_MS)
+        continue
+      }
+      throw error
+    }
+  }
+  throw lastError
+}
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`
   const token = getToken()
@@ -31,10 +65,7 @@ async function request(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers
-  })
+  const response = await fetchWithRetry(url, { ...options, headers })
   
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
