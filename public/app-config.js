@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://minimize-cottages-income-everyday.trycloudflare.com/api'
+  apiUrl: 'https://handy-strategies-collaborative-nominations.trycloudflare.com/api'
 };
