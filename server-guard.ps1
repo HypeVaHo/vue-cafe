@@ -1,7 +1,7 @@
 ﻿# ============================================================
-#  СтудFood — сторож сервера v2 (бэкенд + туннель Serveo)
-#  Serveo периодически не отдаёт зарезервированные имена, поэтому
-#  сторож поднимает туннель со случайным URL, сам обновляет
+#  СтудFood — сторож сервера v3 (бэкенд + туннель Cloudflare)
+#  Основной туннель — Cloudflare (trycloudflare, стабильный).
+#  LocalTunnel — последний запасной. Сторож сам обновляет
 #  public/app-config.js и пушит в GitHub (Pages обновится сам).
 # ============================================================
 
@@ -48,43 +48,51 @@ function Update-AppConfig($url) {
     Push-Config
 }
 
+# Основной туннель — Cloudflare (TryCloudflare). Он наиболее стабилен:
+# релеи Cloudflare держатся долго и не «умирают» как LocalTunnel.
+# LocalTunnel оставлен только как последний запасной вариант.
 function Start-Tunnel {
-    $url = Start-TunnelServeo
+    $url = Start-TunnelCf
     if ($url) { return $url }
-    Log 'Serveo недоступен — фолбэк на LocalTunnel...'
+    Log 'Cloudflare недоступен — фолбэк на LocalTunnel...'
     return Start-TunnelLt
 }
 
-function Start-TunnelServeo {
-    $out = Join-Path $env:TEMP 'serveo_o.txt'
-    $err = Join-Path $env:TEMP 'serveo_e.txt'
+function Start-TunnelCf {
+    $out = Join-Path $env:TEMP 'cf_o.txt'
+    $err = Join-Path $env:TEMP 'cf_e.txt'
     Remove-Item $out, $err -Force -ErrorAction SilentlyContinue
 
-    $p = Start-Process ssh -ArgumentList @(
-            '-o','StrictHostKeyChecking=no',
-            '-o','ServerAliveInterval=30',
-            '-o','ServerAliveCountMax=3',
-            '-o','ExitOnForwardFailure=yes',
-            '-N','-R','0:80:localhost:3000','serveo.net'
+    # Путь к cloudflared.exe: сначала из PATH, иначе из корня проекта
+    $cf = (Get-Command cloudflared -ErrorAction SilentlyContinue).Source
+    if (-not $cf) { $cf = Join-Path $project 'cloudflared.exe' }
+    if (-not (Test-Path $cf)) {
+        Log 'cloudflared.exe не найден'
+        return $null
+    }
+
+    # --protocol http2 — обходим известные проблемы QUIC в cloudflared
+    $p = Start-Process -FilePath $cf -ArgumentList @(
+            'tunnel','--url','http://localhost:3000',
+            '--protocol','http2','--no-autoupdate'
         ) -WindowStyle Hidden -RedirectStandardOutput $out `
         -RedirectStandardError $err -PassThru
 
     $url = $null
-    for ($i = 0; $i -lt 15; $i++) {
+    for ($i = 0; $i -lt 25; $i++) {
         Start-Sleep 1
         if ($p.HasExited) { break }
-        $txt = Get-Content $out -Raw -ErrorAction SilentlyContinue
-        if ($txt -match 'https://([a-z0-9-]+\.serveousercontent\.com)') {
+        $txt = Get-Content $err -Raw -ErrorAction SilentlyContinue
+        if ($txt -match 'https://([a-z0-9-]+\.trycloudflare\.com)') {
             $url = $Matches[1]; break
         }
     }
     if (-not $url) {
-        Get-Process -Name ssh -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
         $e = (Get-Content $err -Raw -ErrorAction SilentlyContinue)
-        Log ('Serveo не поднялся: ' + ($e -replace "`r?`n", ' '))
+        Log ('Cloudflare не поднялся: ' + ($e -replace "`r?`n", ' '))
         return $null
     }
-    Log "Туннель поднят (Serveo): $url"
+    Log "Туннель поднят (Cloudflare): $url"
     Set-Content -Path (Join-Path $project 'guard-tunnel.pid') -Value $p.Id
     Update-AppConfig $url
     return $url
@@ -136,7 +144,7 @@ function Get-NodePidsOnPort([int]$port) {
 }
 
 Set-Location $project
-Log '=== Сторож сервера v2 запущен ==='
+Log '=== Сторож сервера v3 (Cloudflare) запущен ==='
 
 while ($true) {
     try {
@@ -166,7 +174,6 @@ while ($true) {
                 Log 'URL не отвечает 2 раза подряд — пересоздание туннеля...'
                 $script:failCount = 0
                 if ($tunnelPid) { Stop-Process -Id $tunnelPid -Force -ErrorAction SilentlyContinue }
-                Get-Process -Name ssh -ErrorAction SilentlyContinue | Stop-Process -Force
                 Start-Sleep 3
                 Start-Tunnel | Out-Null
             }
