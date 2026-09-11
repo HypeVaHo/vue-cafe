@@ -1,12 +1,12 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { query } from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
-import { isAdmin } from '../middleware/roles.js';
+import { requirePermission } from '../middleware/roles.js';
 
 const router = Router();
 
 // Sales statistics (admin only)
-router.get('/sales', authenticate, isAdmin, async (req, res) => {
+router.get('/sales', authenticate, requirePermission('analytics'), async (req, res) => {
   try {
     const { period = '30' } = req.query;
     const days = parseInt(period);
@@ -51,12 +51,12 @@ router.get('/sales', authenticate, isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Get sales analytics error:', error);
-    res.status(500).json({ error: 'Ошибка получения аналитики продаж' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ Р°РЅР°Р»РёС‚РёРєРё РїСЂРѕРґР°Р¶' });
   }
 });
 
 // Popular products (admin only)
-router.get('/popular', authenticate, isAdmin, async (req, res) => {
+router.get('/popular', authenticate, requirePermission('analytics'), async (req, res) => {
   try {
     const { limit = 10, period = '30' } = req.query;
     const days = parseInt(period);
@@ -87,12 +87,12 @@ router.get('/popular', authenticate, isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Get popular products error:', error);
-    res.status(500).json({ error: 'Ошибка получения популярных товаров' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РїРѕРїСѓР»СЏСЂРЅС‹С… С‚РѕРІР°СЂРѕРІ' });
   }
 });
 
 // Orders statistics (admin only)
-router.get('/orders', authenticate, isAdmin, async (req, res) => {
+router.get('/orders', authenticate, requirePermission('analytics'), async (req, res) => {
   try {
     const { period = '30' } = req.query;
     const days = parseInt(period);
@@ -147,12 +147,12 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Get orders analytics error:', error);
-    res.status(500).json({ error: 'Ошибка получения аналитики заказов' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ Р°РЅР°Р»РёС‚РёРєРё Р·Р°РєР°Р·РѕРІ' });
   }
 });
 
 // Dashboard summary (admin only)
-router.get('/dashboard', authenticate, isAdmin, async (req, res) => {
+router.get('/dashboard', authenticate, requirePermission('analytics'), async (req, res) => {
   try {
     // Today's stats
     const todayResult = await query(`
@@ -197,7 +197,7 @@ router.get('/dashboard', authenticate, isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Get dashboard error:', error);
-    res.status(500).json({ error: 'Ошибка получения дашборда' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РґР°С€Р±РѕСЂРґР°' });
   }
 });
 

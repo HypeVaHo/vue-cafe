@@ -7,8 +7,66 @@ import { api } from '../api/client'
 const router = useRouter()
 const auth = useAuthStore()
 
-// Главный админ — управляет ролями и настройками сайта
+// Главный админ — управляет ролями и правами, настройки сайта тоже только его
 const isSuperAdmin = computed(() => !!auth.state.user?.is_super_admin)
+
+// Разделы админ-панели. Обычный админ видит только те, что выдал ему главный
+// админ (permissions: null = все). Дашборд доступен всем админам.
+const ALL_TABS = [
+  { key: 'dashboard', label: 'Дашборд', perm: null },
+  { key: 'products', label: 'Продукты', perm: 'products' },
+  { key: 'categories', label: 'Категории', perm: 'categories' },
+  { key: 'orders', label: 'Заказы', perm: 'orders' },
+  { key: 'users', label: 'Пользователи', perm: 'users' }
+]
+const visibleTabs = computed(() => ALL_TABS.filter(t => isSuperAdmin.value || auth.can(t.perm)))
+
+// Права, которые ГА может выдавать обычным админам
+const PERMISSION_ITEMS = [
+  { key: 'products', label: 'Продукты' },
+  { key: 'categories', label: 'Категории' },
+  { key: 'orders', label: 'Заказы' },
+  { key: 'users', label: 'Пользователи' },
+  { key: 'analytics', label: 'Аналитика' }
+]
+
+// Модалка управления правами (только ГА)
+const showPermissionsModal = ref(false)
+const permissionsUser = ref(null)
+const permissionsDraft = ref([]) // [] = все разделы
+const savingPermissions = ref(false)
+
+function openPermissionsModal(user) {
+  permissionsUser.value = user
+  // null (= все разделы) показываем как «всё выбрано»
+  permissionsDraft.value = user.permissions == null ? PERMISSION_ITEMS.map(p => p.key) : [...user.permissions]
+  showPermissionsModal.value = true
+}
+
+async function savePermissions() {
+  if (!permissionsUser.value) return
+  savingPermissions.value = true
+  try {
+    const all = PERMISSION_ITEMS.length === permissionsDraft.value.length
+    const payload = all ? null : permissionsDraft.value
+    const updated = await api.updateUserPermissions(permissionsUser.value.id, payload)
+    const idx = users.value.findIndex(u => u.id === updated.id)
+    if (idx !== -1) users.value[idx] = updated
+    showPermissionsModal.value = false
+  } catch (err) {
+    alert('Ошибка сохранения прав: ' + err.message)
+  } finally {
+    savingPermissions.value = false
+  }
+}
+
+function togglePermissionDraft(key, checked) {
+  if (checked) {
+    if (!permissionsDraft.value.includes(key)) permissionsDraft.value.push(key)
+  } else {
+    permissionsDraft.value = permissionsDraft.value.filter(k => k !== key)
+  }
+}
 
 // State
 const activeTab = ref('dashboard')
@@ -239,11 +297,11 @@ async function deleteCategory(id) {
   }
 }
 
-// User role
+// User role (только ГА). Роли: customer | admin (пекарь объединён с админом).
 async function changeUserRole(user, newRole) {
   try {
-    await api.updateUserRole(user.id, newRole)
-    user.role = newRole
+    const updated = await api.updateUserRole(user.id, newRole)
+    Object.assign(user, updated)
   } catch (err) {
     alert('Ошибка: ' + err.message)
   }
@@ -252,7 +310,7 @@ async function changeUserRole(user, newRole) {
 onMounted(async () => {
   await auth.init()
   
-  if (!auth.isAdmin.value) {
+  if (!auth.isBaker.value && !auth.isAdmin.value) {
     router.replace('/login')
     return
   }
@@ -269,43 +327,22 @@ onMounted(async () => {
       </div>
       
       <nav class="admin-nav">
-        <button 
-          :class="['nav-item', { active: activeTab === 'dashboard' }]"
-          @click="switchTab('dashboard')"
+        <button
+          v-for="tab in visibleTabs"
+          :key="tab.key"
+          :class="['nav-item', { active: activeTab === tab.key }]"
+          @click="switchTab(tab.key)"
         >
-          Дашборд
+          {{ tab.label }}
         </button>
-        <button 
-          :class="['nav-item', { active: activeTab === 'products' }]"
-          @click="switchTab('products')"
-        >
-          Продукты
-        </button>
-        <button 
-          :class="['nav-item', { active: activeTab === 'categories' }]"
-          @click="switchTab('categories')"
-        >
-          Категории
-        </button>
-        <button 
-          :class="['nav-item', { active: activeTab === 'orders' }]"
-          @click="switchTab('orders')"
-        >
-          Заказы
-        </button>
-        <button 
-          :class="['nav-item', { active: activeTab === 'users' }]"
-          @click="switchTab('users')"
-        >
-          Пользователи
-        </button>
-        <button 
+        <button
+          v-if="isSuperAdmin"
           :class="['nav-item', { active: activeTab === 'analytics' }]"
           @click="switchTab('analytics')"
         >
           Аналитика
         </button>
-        <RouterLink class="nav-item" to="/admin/settings">
+        <RouterLink v-if="isSuperAdmin" class="nav-item" to="/admin/settings">
           ⚙ Настройки сайта
         </RouterLink>
       </nav>
@@ -470,6 +507,7 @@ onMounted(async () => {
                 <th>VK ID</th>
                 <th>Роль</th>
                 <th>Дата регистрации</th>
+                <th>Переход</th>
               </tr>
             </thead>
             <tbody>
@@ -483,18 +521,32 @@ onMounted(async () => {
                 </td>
                 <td>{{ user.vk_id }}</td>
                 <td>
-                  <select 
-                    :value="user.role" 
-                    @change="changeUserRole(user, $event.target.value)"
-                    :disabled="user.id === auth.state.user?.id || user.is_super_admin || !isSuperAdmin"
-                    class="role-select"
-                  >
-                    <option value="customer">Покупатель</option>
-                    <option value="baker">Пекарь</option>
-                    <option value="admin">Админ</option>
-                  </select>
+                  <div class="role-cell">
+                    <select
+                      :value="user.role"
+                      @change="changeUserRole(user, $event.target.value)"
+                      :disabled="user.is_super_admin || !isSuperAdmin"
+                      class="role-select"
+                    >
+                      <option value="customer">Покупатель</option>
+                      <option value="admin">Админ</option>
+                    </select>
+                    <button
+                      v-if="user.role === 'admin' && !user.is_super_admin"
+                      class="btn-icon"
+                      title="Настроить права админа"
+                      @click="openPermissionsModal(user)"
+                    >
+                      Права
+                    </button>
+                  </div>
                 </td>
                 <td>{{ formatDate(user.created_at) }}</td>
+                <td>
+                  <RouterLink class="btn-icon" to="/account" title="Личный кабинет пользователя">
+                    Кабинет
+                  </RouterLink>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -546,6 +598,35 @@ onMounted(async () => {
       </template>
     </main>
     
+    <!-- Permissions Modal (только главный админ) -->
+    <div v-if="showPermissionsModal" class="modal-overlay" @click.self="showPermissionsModal = false">
+      <div class="modal">
+        <h2>Права админа</h2>
+        <p class="permissions-user">
+          {{ permissionsUser?.first_name }} {{ permissionsUser?.last_name }}
+        </p>
+        <p class="permissions-hint">
+          Отметьте разделы, доступные этому админу. Если выбраны все — у него будут права на всё.
+        </p>
+        <form class="modal-form" @submit.prevent="savePermissions">
+          <label v-for="p in PERMISSION_ITEMS" :key="p.key" class="checkbox-row">
+            <input
+              type="checkbox"
+              :checked="permissionsDraft.includes(p.key)"
+              @change="togglePermissionDraft(p.key, $event.target.checked)"
+            />
+            <span>{{ p.label }}</span>
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="button" @click="showPermissionsModal = false">Отмена</button>
+            <button type="submit" class="button button--primary" :disabled="savingPermissions">
+              {{ savingPermissions ? 'Сохранение…' : 'Сохранить' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Product Modal -->
     <div v-if="showProductForm" class="modal-overlay" @click.self="showProductForm = false">
       <div class="modal">
@@ -832,6 +913,23 @@ onMounted(async () => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
+}
+
+.role-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.permissions-user {
+  margin: -0.75rem 0 0.25rem;
+  font-weight: 600;
+}
+
+.permissions-hint {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-bottom: 1rem;
 }
 
 .role-select {

@@ -131,8 +131,13 @@ export const api = {
     return request(`/users${query ? `?${query}` : ''}`)
   },
   getUser: (id) => request(`/users/${id}`),
-  updateUserRole: (id, role) => 
-    request(`/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  updateUserRole: (id, role, permissions = undefined) =>
+    request(`/users/${id}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify(permissions === undefined ? { role } : { role, permissions })
+    }),
+  updateUserPermissions: (id, permissions) =>
+    request(`/users/${id}/permissions`, { method: 'PATCH', body: JSON.stringify({ permissions }) }),
   
   // Analytics
   getSalesAnalytics: (period = 30) => request(`/analytics/sales?period=${period}`),

@@ -50,12 +50,18 @@ router.beforeEach(async (to) => {
 
   await auth.init()
 
-  if (to.path === '/admin' || to.path === '/baker' || to.path === '/account') {
+  if (
+    to.path === '/admin' ||
+    to.path === '/admin/settings' ||
+    to.path === '/baker' ||
+    to.path === '/account'
+  ) {
     // Не авторизован — на страницу входа
     if (!auth.isAuthenticated.value) return { path: '/login' }
-    // Авторизован, но роли не хватает (например, покупатель на /admin) — на главную
+    // Авторизован, но ролей/прав не хватает — на главную
     const allowed =
-      (to.path === '/admin' && auth.isAdmin.value) ||
+      ((to.path === '/admin' || to.path === '/admin/settings') &&
+        (auth.isAdmin.value || (to.path === '/admin' && auth.isBaker.value))) ||
       (to.path === '/baker' && auth.isBaker.value) ||
       to.path === '/account'
     if (!allowed) return { path: '/' }

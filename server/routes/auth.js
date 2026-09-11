@@ -105,7 +105,9 @@ router.post('/vk-exchange', async (req, res) => {
         first_name: user.first_name,
         last_name: user.last_name,
         photo_url: user.photo_url,
-        role: user.role
+        role: user.role,
+        is_super_admin: !!user.is_super_admin,
+        permissions: user.permissions ? JSON.parse(user.permissions) : null
       }
     });
   } catch (error) {
@@ -213,7 +215,9 @@ router.get('/me', authenticate, (req, res) => {
     first_name: req.user.first_name,
     last_name: req.user.last_name,
     photo_url: req.user.photo_url,
-    role: req.user.role
+    role: req.user.role,
+    is_super_admin: !!req.user.is_super_admin,
+    permissions: req.user.permissions ? JSON.parse(req.user.permissions) : null
   });
 });
 
@@ -341,7 +345,8 @@ router.post('/vk-token', async (req, res) => {
         last_name: user.last_name,
         photo_url: user.photo_url,
         role: user.role,
-        is_super_admin: !!user.is_super_admin
+        is_super_admin: !!user.is_super_admin,
+        permissions: user.permissions ? JSON.parse(user.permissions) : null
       }
     });
   } catch (error) {

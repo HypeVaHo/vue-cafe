@@ -1,5 +1,5 @@
-<script setup>
-import { computed, onMounted, ref } from 'vue'
+﻿<script setup>
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBakeryStore } from '../stores/bakeryStore'
 import { useAuthStore } from '../stores/authStore'
@@ -7,6 +7,11 @@ import { useAuthStore } from '../stores/authStore'
 const route = useRoute()
 const router = useRouter()
 const navOpen = ref(false)
+
+// Мобильный бургер: закрываем меню при переходе по страницам
+watch(() => route.fullPath, () => {
+  if (navOpen.value) navOpen.value = false
+})
 
 const store = useBakeryStore()
 const auth = useAuthStore()
@@ -58,6 +63,11 @@ const initials = computed(() => {
   return `${u?.first_name?.[0] || ''}${u?.last_name?.[0] || ''}`.toUpperCase()
 })
 
+// Логотип в шапке: первая картинка из меню, иначе фавиконка
+const brandImage = computed(
+  () => store.state.products[0]?.image || `${import.meta.env.BASE_URL}favicon.svg`
+)
+
 async function handleLogout() {
   navOpen.value = false
   await auth.logout()
@@ -71,7 +81,7 @@ async function handleLogout() {
       <a class="brand" href="/" aria-label="Студенческое кафе">
         <span class="brand-mark" aria-hidden="true">
           <img
-            :src="store.state.products.length ? store.state.products[0]?.image : '/assets/logo.png'"
+            :src="brandImage"
             alt=""
           />
         </span>
@@ -96,6 +106,35 @@ async function handleLogout() {
         >
           {{ l.label }}
         </RouterLink>
+
+        <!-- Мобильные пункты: корзина и вход/выход (на десктопе скрыты) -->
+        <div class="nav-mobile-extra">
+          <RouterLink class="nav-link nav-link--cart" to="/cart">
+            🛒 Корзина
+            <b class="cart-badge">{{ cartCount }}</b>
+          </RouterLink>
+
+          <RouterLink v-if="!isAuthed" class="nav-link nav-link--accent" to="/login">
+            Войти
+          </RouterLink>
+
+          <template v-else>
+            <div class="nav-user">
+              <img
+                v-if="user?.photo_url"
+                :src="user.photo_url"
+                :alt="user?.first_name"
+                class="nav-user__avatar"
+              />
+              <span v-else class="nav-user__avatar nav-user__avatar--ph">{{ initials }}</span>
+              <span class="nav-user__name">{{ user?.first_name }}</span>
+              <span v-if="isAdmin" class="user-chip__badge">Админ</span>
+            </div>
+            <button class="nav-link nav-link--logout" type="button" @click="handleLogout">
+              Выйти
+            </button>
+          </template>
+        </div>
       </nav>
 
       <div class="header-actions">
@@ -121,6 +160,7 @@ async function handleLogout() {
             />
             <span v-else class="user-chip__avatar user-chip__avatar--ph">{{ initials }}</span>
             <span class="user-chip__name">{{ user?.first_name }}</span>
+            <span v-if="isAdmin" class="user-chip__badge">Админ</span>
           </RouterLink>
           <button
             class="user-chip__logout"
@@ -176,6 +216,78 @@ async function handleLogout() {
 </template>
 
 <style scoped>
+/* Мобильный блок внутри бургер-меню: скрыт на десктопе */
+.nav-mobile-extra {
+  display: none;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  background: var(--color-bg-secondary, #f8f6f4);
+}
+
+.nav-user__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.nav-user__avatar--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent, #d4894b);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.nav-user__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .nav-mobile-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(61, 43, 31, 0.15);
+  }
+
+  .nav-link--cart,
+  .nav-link--accent,
+  .nav-link--logout {
+    width: 100%;
+    justify-content: flex-start;
+    min-height: 46px;
+    padding-inline: 16px;
+  }
+
+  .nav-link--logout {
+    color: #e53e3e;
+    border: 1px solid rgba(229, 62, 62, 0.35);
+    border-radius: 10px;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .nav-link--logout:hover {
+    background: rgba(229, 62, 62, 0.08);
+  }
+}
+
 .login-link {
   display: inline-flex;
   align-items: center;
@@ -238,6 +350,16 @@ async function handleLogout() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.user-chip__badge {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-accent, #d4894b);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .user-chip__logout {

@@ -26,8 +26,20 @@ function decodeJwtPayload(token) {
 export function useAuthStore() {
   const isAuthenticated = computed(() => !!state.user)
   const isAdmin = computed(() => state.user?.role === 'admin')
+  const isSuperAdmin = computed(() => !!state.user?.is_super_admin)
   const isBaker = computed(() => state.user?.role === 'baker' || state.user?.role === 'admin')
   const isCustomer = computed(() => !!state.user)
+
+  // Доступ к разделу админ-панели. Права настраивает главный админ
+  // (users.permissions: null = все разделы, массив = только перечисленные).
+  function can(perm) {
+    const u = state.user
+    if (!u) return false
+    if (u.is_super_admin) return true
+    if (u.role !== 'admin') return false
+    if (u.permissions == null) return true
+    return Array.isArray(u.permissions) && u.permissions.includes(perm)
+  }
   
   // init() кешируется: guards вызывают его на каждой навигации,
   // но реальный запрос /auth/me уходит один раз. force=true — после логина.
@@ -143,8 +155,10 @@ export function useAuthStore() {
     state,
     isAuthenticated,
     isAdmin,
+    isSuperAdmin,
     isBaker,
     isCustomer,
+    can,
     init,
     loginWithVk,
     handleAuthCallback,

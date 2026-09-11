@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../config/database.js';
+import { authenticate } from '../middleware/auth.js';
 import { requireSuperAdmin } from '../middleware/roles.js';
 
 const router = Router();
@@ -31,7 +32,7 @@ router.get('/', async (req, res) => {
 });
 
 // Обновление настроек — только главный админ
-router.put('/', requireSuperAdmin, async (req, res) => {
+router.put('/', authenticate, requireSuperAdmin, async (req, res) => {
   try {
     const updates = req.body || {};
     const applied = [];

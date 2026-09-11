@@ -1,7 +1,7 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { query, getPool, sql } from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
-import { isBaker, isAdmin } from '../middleware/roles.js';
+import { requirePermission } from '../middleware/roles.js';
 import { sendOrderNotification, notifyBakersAboutNewOrder } from '../services/vkNotifications.js';
 
 const router = Router();
@@ -16,11 +16,11 @@ const STATUS_FLOW = {
 };
 
 const STATUS_LABELS = {
-  new: 'Новый',
-  preparing: 'Готовится',
-  ready: 'Готов',
-  completed: 'Выдан',
-  cancelled: 'Отменён'
+  new: 'РќРѕРІС‹Р№',
+  preparing: 'Р“РѕС‚РѕРІРёС‚СЃСЏ',
+  ready: 'Р“РѕС‚РѕРІ',
+  completed: 'Р’С‹РґР°РЅ',
+  cancelled: 'РћС‚РјРµРЅС‘РЅ'
 };
 
 // Get orders
@@ -75,7 +75,7 @@ router.get('/', authenticate, async (req, res) => {
     res.json(orders);
   } catch (error) {
     console.error('Get orders error:', error);
-    res.status(500).json({ error: 'Ошибка получения заказов' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ Р·Р°РєР°Р·РѕРІ' });
   }
 });
 
@@ -99,7 +99,7 @@ router.get('/:id', authenticate, async (req, res) => {
     const result = await query(queryStr, params);
 
     if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Заказ не найден' });
+      return res.status(404).json({ error: 'Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ' });
     }
 
     const order = result.recordset[0];
@@ -114,7 +114,7 @@ router.get('/:id', authenticate, async (req, res) => {
     res.json(order);
   } catch (error) {
     console.error('Get order error:', error);
-    res.status(500).json({ error: 'Ошибка получения заказа' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ Р·Р°РєР°Р·Р°' });
   }
 });
 
@@ -129,7 +129,7 @@ router.post('/', authenticate, async (req, res) => {
     const { items, comment } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Заказ должен содержать хотя бы один товар' });
+      return res.status(400).json({ error: 'Р—Р°РєР°Р· РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ С‚РѕРІР°СЂ' });
     }
 
     // Get product details
@@ -153,18 +153,18 @@ router.post('/', authenticate, async (req, res) => {
       
       if (!product) {
         await transaction.rollback();
-        return res.status(400).json({ error: `Продукт с ID ${item.product_id} не найден` });
+        return res.status(400).json({ error: `РџСЂРѕРґСѓРєС‚ СЃ ID ${item.product_id} РЅРµ РЅР°Р№РґРµРЅ` });
       }
 
       if (!product.is_available) {
         await transaction.rollback();
-        return res.status(400).json({ error: `Продукт "${product.name}" недоступен` });
+        return res.status(400).json({ error: `РџСЂРѕРґСѓРєС‚ "${product.name}" РЅРµРґРѕСЃС‚СѓРїРµРЅ` });
       }
 
       const quantity = parseInt(item.quantity) || 1;
       if (quantity < 1) {
         await transaction.rollback();
-        return res.status(400).json({ error: 'Количество должно быть больше 0' });
+        return res.status(400).json({ error: 'РљРѕР»РёС‡РµСЃС‚РІРѕ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ 0' });
       }
 
       const itemTotal = parseFloat(product.price) * quantity;
@@ -216,23 +216,23 @@ router.post('/', authenticate, async (req, res) => {
 
     res.status(201).json(order);
 
-    // Уведомляем пекарей о новом заказе (фон, не блокирует ответ клиенту)
+    // РЈРІРµРґРѕРјР»СЏРµРј РїРµРєР°СЂРµР№ Рѕ РЅРѕРІРѕРј Р·Р°РєР°Р·Рµ (С„РѕРЅ, РЅРµ Р±Р»РѕРєРёСЂСѓРµС‚ РѕС‚РІРµС‚ РєР»РёРµРЅС‚Сѓ)
     notifyBakersAboutNewOrder(order.id, order.total, order.items?.length || 0)
       .catch((e) => console.error('Baker notify error:', e.message));
   } catch (error) {
     await transaction.rollback();
     console.error('Create order error:', error);
-    res.status(500).json({ error: 'Ошибка создания заказа' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ Р·Р°РєР°Р·Р°' });
   }
 });
 
 // Update order status (baker/admin only)
-router.patch('/:id/status', authenticate, isBaker, async (req, res) => {
+router.patch('/:id/status', authenticate, requirePermission('orders'), async (req, res) => {
   try {
     const { status } = req.body;
 
     if (!status || !STATUS_LABELS[status]) {
-      return res.status(400).json({ error: 'Неверный статус' });
+      return res.status(400).json({ error: 'РќРµРІРµСЂРЅС‹Р№ СЃС‚Р°С‚СѓСЃ' });
     }
 
     // Get current order
@@ -245,7 +245,7 @@ router.patch('/:id/status', authenticate, isBaker, async (req, res) => {
     );
 
     if (orderResult.recordset.length === 0) {
-      return res.status(404).json({ error: 'Заказ не найден' });
+      return res.status(404).json({ error: 'Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ' });
     }
 
     const order = orderResult.recordset[0];
@@ -253,7 +253,7 @@ router.patch('/:id/status', authenticate, isBaker, async (req, res) => {
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ 
-        error: `Нельзя изменить статус с "${STATUS_LABELS[order.status]}" на "${STATUS_LABELS[status]}"`,
+        error: `РќРµР»СЊР·СЏ РёР·РјРµРЅРёС‚СЊ СЃС‚Р°С‚СѓСЃ СЃ "${STATUS_LABELS[order.status]}" РЅР° "${STATUS_LABELS[status]}"`,
         allowed: allowedStatuses.map(s => ({ value: s, label: STATUS_LABELS[s] }))
       });
     }
@@ -278,31 +278,31 @@ router.patch('/:id/status', authenticate, isBaker, async (req, res) => {
     res.json(updated);
   } catch (error) {
     console.error('Update order status error:', error);
-    res.status(500).json({ error: 'Ошибка обновления статуса' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ СЃС‚Р°С‚СѓСЃР°' });
   }
 });
 
-// Delete order (admin only) — полное управление заказами
-router.delete('/:id', authenticate, isAdmin, async (req, res) => {
+// Delete order (admin only) вЂ” РїРѕР»РЅРѕРµ СѓРїСЂР°РІР»РµРЅРёРµ Р·Р°РєР°Р·Р°РјРё
+router.delete('/:id', authenticate, requirePermission('orders'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
 
     const existing = await query('SELECT id, status FROM orders WHERE id = @id', { id });
     if (existing.recordset.length === 0) {
-      return res.status(404).json({ error: 'Заказ не найден' });
+      return res.status(404).json({ error: 'Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ' });
     }
-    // Новые заказы нельзя удалять молча — сначала отмените
+    // РќРѕРІС‹Рµ Р·Р°РєР°Р·С‹ РЅРµР»СЊР·СЏ СѓРґР°Р»СЏС‚СЊ РјРѕР»С‡Р° вЂ” СЃРЅР°С‡Р°Р»Р° РѕС‚РјРµРЅРёС‚Рµ
     if (existing.recordset[0].status === 'new') {
-      return res.status(400).json({ error: 'Нельзя удалить новый заказ — сначала отмените его' });
+      return res.status(400).json({ error: 'РќРµР»СЊР·СЏ СѓРґР°Р»РёС‚СЊ РЅРѕРІС‹Р№ Р·Р°РєР°Р· вЂ” СЃРЅР°С‡Р°Р»Р° РѕС‚РјРµРЅРёС‚Рµ РµРіРѕ' });
     }
 
     await query('DELETE FROM order_items WHERE order_id = @id', { id });
     await query('DELETE FROM orders WHERE id = @id', { id });
 
-    res.json({ message: 'Заказ удалён' });
+    res.json({ message: 'Р—Р°РєР°Р· СѓРґР°Р»С‘РЅ' });
   } catch (error) {
     console.error('Delete order error:', error);
-    res.status(500).json({ error: 'Ошибка удаления заказа' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ Р·Р°РєР°Р·Р°' });
   }
 });
 

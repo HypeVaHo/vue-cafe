@@ -15,7 +15,7 @@ export async function authenticate(req, res, next) {
     
     // Get fresh user data from database
     const result = await query(
-      'SELECT id, vk_id, first_name, last_name, photo_url, role, is_super_admin FROM users WHERE id = @userId',
+      'SELECT id, vk_id, first_name, last_name, photo_url, role, is_super_admin, permissions FROM users WHERE id = @userId',
       { userId: decoded.userId }
     );
 
@@ -47,7 +47,7 @@ export async function optionalAuth(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     const result = await query(
-      'SELECT id, vk_id, first_name, last_name, photo_url, role FROM users WHERE id = @userId',
+      'SELECT id, vk_id, first_name, last_name, photo_url, role, is_super_admin, permissions FROM users WHERE id = @userId',
       { userId: decoded.userId }
     );
 

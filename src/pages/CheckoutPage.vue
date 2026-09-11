@@ -12,6 +12,19 @@ const router = useRouter()
 const isAuthed = computed(() => auth.isAuthenticated.value)
 const submitting = ref(false)
 const submitError = ref(null)
+
+// Модалка «Хотите получать уведомления в ВК?» после оформления заказа
+const showVkNotifyModal = ref(false)
+const submittedOrderId = ref(null)
+
+function openVkNotifications() {
+  const url = siteSettings.value?.vk_bot_url || 'https://vk.me/'
+  window.open(url, '_blank', 'noopener')
+}
+function closeVkNotifyModal(goSuccess = true) {
+  showVkNotifyModal.value = false
+  if (goSuccess) router.push('/success')
+}
 const comment = ref('')
 // Позиции меню из БД — чтобы сопоставить товары корзины с product_id
 const dbProducts = ref([])
@@ -48,6 +61,16 @@ const cartDetailed = computed(() => {
 })
 
 const cartTotal = computed(() => cartDetailed.value.reduce((sum, item) => sum + item.lineTotal, 0))
+
+// Настройки сайта (для ссылки на VK-уведомления)
+const siteSettings = ref(null)
+onMounted(async () => {
+  try {
+    siteSettings.value = await api.getSettings()
+  } catch {
+    // ignore — модалка откроет запасную ссылку
+  }
+})
 
 // id из БД: у товаров из API он уже числовой; для резервного каталога ищем по названию
 function dbProductId(product) {
@@ -110,7 +133,9 @@ async function submitCheckout() {
       // ignore
     }
 
-    router.push('/success')
+    // Вместо мгновенного перехода — сначала всплывающее уведомление
+    submittedOrderId.value = order.id
+    showVkNotifyModal.value = true
   } catch (err) {
     submitError.value = err.message || 'Не удалось оформить заказ'
   } finally {
@@ -225,6 +250,26 @@ async function submitCheckout() {
         </a>
       </aside>
     </section>
+
+    <!-- Модалка «Хотите получать уведомления в ВК?» -->
+    <div v-if="showVkNotifyModal" class="vk-modal-overlay" @click.self="closeVkNotifyModal(true)">
+      <div class="vk-modal" role="dialog" aria-modal="true">
+        <div class="vk-modal__emoji">🔔</div>
+        <div class="vk-modal__title">Заказ #{{ submittedOrderId }} принят!</div>
+        <div class="vk-modal__text">
+          Хотите получать уведомления в ВК?<br />
+          Мы напишем, когда заказ начнём готовить и когда он будет готов.
+        </div>
+        <div class="vk-modal__actions">
+          <button class="vk-btn vk-btn--primary" @click="openVkNotifications(); closeVkNotifyModal(true)">
+            Да, получать уведомления
+          </button>
+          <button class="vk-btn vk-btn--ghost" @click="closeVkNotifyModal(true)">
+            Нет, спасибо
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -257,5 +302,79 @@ async function submitCheckout() {
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+}
+
+/* Модалка VK-уведомлений */
+.vk-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.vk-modal {
+  background: var(--color-card, #fff);
+  border-radius: 16px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.vk-modal__emoji {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.vk-modal__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.vk-modal__text {
+  color: var(--color-text-secondary, #718096);
+  font-size: 0.92rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.45;
+}
+
+.vk-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.vk-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.vk-btn--primary {
+  background: #0077ff;
+  color: #fff;
+}
+
+.vk-btn--primary:hover {
+  background: #0066dd;
+}
+
+.vk-btn--ghost {
+  background: transparent;
+  color: var(--color-text-secondary, #718096);
+  border: 1px solid #e2e8f0;
+}
+
+.vk-btn--ghost:hover {
+  background: #f7fafc;
 }
 </style>

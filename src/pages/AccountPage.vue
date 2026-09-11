@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { api } from '../api/client'
@@ -66,6 +66,24 @@ async function handleLogout() {
   await auth.logout()
   router.push('/')
 }
+
+// Живой статус заказа: тихо обновляем список каждые 15 секунд
+// (без loading-спиннера — бейджи статусов меняются онлайн)
+let statusPollTimer = null
+async function pollOrders() {
+  try {
+    orders.value = await api.getOrders()
+    error.value = null
+  } catch {
+    // моргание туннеля — пропускаем цикл, spinner не включаем
+  }
+}
+onMounted(() => {
+  statusPollTimer = setInterval(pollOrders, 15000)
+})
+onBeforeUnmount(() => {
+  if (statusPollTimer) clearInterval(statusPollTimer)
+})
 
 onMounted(async () => {
   await auth.init()

@@ -9,8 +9,10 @@
       // который восстановит адрес через history.replaceState.
       (function () {
         var l = window.location;
-        var path = l.pathname.replace(/^\/vue-cafe/, ''); // убираем base
-        var target = '/vue-cafe/' + (path || '') + l.search + l.hash;
+        // Убираем base (/vue-cafe), НО не добавляем лишний слэш:
+        // '/vue-cafe/menu' -> '/menu' -> '/vue-cafe/menu' (а не '/vue-cafe//menu').
+        var path = l.pathname.replace(/^\/vue-cafe/, '');
+        var target = '/vue-cafe' + (path || '/') + l.search + l.hash;
         sessionStorage.setItem('spa-redirect', target);
         l.replace('/vue-cafe/');
       })();

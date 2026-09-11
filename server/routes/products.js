@@ -1,7 +1,7 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { query, getPool, sql } from '../config/database.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
-import { isAdmin } from '../middleware/roles.js';
+import { requirePermission } from '../middleware/roles.js';
 
 const router = Router();
 
@@ -35,7 +35,7 @@ router.get('/', optionalAuth, async (req, res) => {
     res.json(result.recordset);
   } catch (error) {
     console.error('Get products error:', error);
-    res.status(500).json({ error: 'Ошибка получения продуктов' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РїСЂРѕРґСѓРєС‚РѕРІ' });
   }
 });
 
@@ -51,23 +51,23 @@ router.get('/:id', async (req, res) => {
     );
 
     if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Продукт не найден' });
+      return res.status(404).json({ error: 'РџСЂРѕРґСѓРєС‚ РЅРµ РЅР°Р№РґРµРЅ' });
     }
 
     res.json(result.recordset[0]);
   } catch (error) {
     console.error('Get product error:', error);
-    res.status(500).json({ error: 'Ошибка получения продукта' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РїСЂРѕРґСѓРєС‚Р°' });
   }
 });
 
 // Create product (admin only)
-router.post('/', authenticate, isAdmin, async (req, res) => {
+router.post('/', authenticate, requirePermission('products'), async (req, res) => {
   try {
     const { category_id, name, subtitle, description, price, icon, image_url, is_popular = false, is_available = true } = req.body;
 
     if (!name || !price) {
-      return res.status(400).json({ error: 'Название и цена обязательны' });
+      return res.status(400).json({ error: 'РќР°Р·РІР°РЅРёРµ Рё С†РµРЅР° РѕР±СЏР·Р°С‚РµР»СЊРЅС‹' });
     }
 
     const pool = await getPool();
@@ -77,7 +77,7 @@ router.post('/', authenticate, isAdmin, async (req, res) => {
       .input('subtitle', sql.NVarChar, subtitle || null)
       .input('description', sql.NVarChar, description || null)
       .input('price', sql.Decimal(10, 2), price)
-      .input('icon', sql.NVarChar, icon || '🥐')
+      .input('icon', sql.NVarChar, icon || 'рџҐђ')
       .input('imageUrl', sql.NVarChar, image_url || null)
       .input('isPopular', sql.Bit, is_popular ? 1 : 0)
       .input('isAvailable', sql.Bit, is_available ? 1 : 0)
@@ -90,19 +90,19 @@ router.post('/', authenticate, isAdmin, async (req, res) => {
     res.status(201).json(result.recordset[0]);
   } catch (error) {
     console.error('Create product error:', error);
-    res.status(500).json({ error: 'Ошибка создания продукта' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ РїСЂРѕРґСѓРєС‚Р°' });
   }
 });
 
 // Update product (admin only)
-router.put('/:id', authenticate, isAdmin, async (req, res) => {
+router.put('/:id', authenticate, requirePermission('products'), async (req, res) => {
   try {
     const { category_id, name, subtitle, description, price, icon, image_url, is_popular, is_available } = req.body;
 
     // Check if product exists
     const existing = await query('SELECT id FROM products WHERE id = @id', { id: parseInt(req.params.id) });
     if (existing.recordset.length === 0) {
-      return res.status(404).json({ error: 'Продукт не найден' });
+      return res.status(404).json({ error: 'РџСЂРѕРґСѓРєС‚ РЅРµ РЅР°Р№РґРµРЅ' });
     }
 
     const pool = await getPool();
@@ -113,7 +113,7 @@ router.put('/:id', authenticate, isAdmin, async (req, res) => {
       .input('subtitle', sql.NVarChar, subtitle || null)
       .input('description', sql.NVarChar, description || null)
       .input('price', sql.Decimal(10, 2), price)
-      .input('icon', sql.NVarChar, icon || '🥐')
+      .input('icon', sql.NVarChar, icon || 'рџҐђ')
       .input('imageUrl', sql.NVarChar, image_url || null)
       .input('isPopular', sql.Bit, is_popular ? 1 : 0)
       .input('isAvailable', sql.Bit, is_available ? 1 : 0)
@@ -128,34 +128,34 @@ router.put('/:id', authenticate, isAdmin, async (req, res) => {
     res.json(result.recordset[0]);
   } catch (error) {
     console.error('Update product error:', error);
-    res.status(500).json({ error: 'Ошибка обновления продукта' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ РїСЂРѕРґСѓРєС‚Р°' });
   }
 });
 
 // Delete product (admin only)
-router.delete('/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/:id', authenticate, requirePermission('products'), async (req, res) => {
   try {
     const existing = await query('SELECT id FROM products WHERE id = @id', { id: parseInt(req.params.id) });
     if (existing.recordset.length === 0) {
-      return res.status(404).json({ error: 'Продукт не найден' });
+      return res.status(404).json({ error: 'РџСЂРѕРґСѓРєС‚ РЅРµ РЅР°Р№РґРµРЅ' });
     }
 
     await query('DELETE FROM products WHERE id = @id', { id: parseInt(req.params.id) });
-    res.json({ message: 'Продукт удален' });
+    res.json({ message: 'РџСЂРѕРґСѓРєС‚ СѓРґР°Р»РµРЅ' });
   } catch (error) {
     console.error('Delete product error:', error);
-    res.status(500).json({ error: 'Ошибка удаления продукта' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ РїСЂРѕРґСѓРєС‚Р°' });
   }
 });
 
 // Toggle product availability (admin only)
-router.patch('/:id/availability', authenticate, isAdmin, async (req, res) => {
+router.patch('/:id/availability', authenticate, requirePermission('products'), async (req, res) => {
   try {
     const { is_available } = req.body;
 
     const existing = await query('SELECT id FROM products WHERE id = @id', { id: parseInt(req.params.id) });
     if (existing.recordset.length === 0) {
-      return res.status(404).json({ error: 'Продукт не найден' });
+      return res.status(404).json({ error: 'РџСЂРѕРґСѓРєС‚ РЅРµ РЅР°Р№РґРµРЅ' });
     }
 
     const result = await query(
@@ -166,7 +166,7 @@ router.patch('/:id/availability', authenticate, isAdmin, async (req, res) => {
     res.json(result.recordset[0]);
   } catch (error) {
     console.error('Toggle availability error:', error);
-    res.status(500).json({ error: 'Ошибка обновления доступности' });
+    res.status(500).json({ error: 'РћС€РёР±РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ РґРѕСЃС‚СѓРїРЅРѕСЃС‚Рё' });
   }
 });
 
