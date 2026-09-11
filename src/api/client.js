@@ -14,16 +14,23 @@ function getToken() {
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`
   const token = getToken()
-  
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers
+
+  const headers = { ...options.headers }
+
+  // Content-Type ставим ТОЛЬКО когда есть тело запроса.
+  // Для GET без body его не ставим -> запрос становится «simple request»
+  // и браузер НЕ шлёт CORS preflight (OPTIONS). Туннели типа localtunnel
+  // не всегда корректно обрабатывают OPTIONS, поэтому это делает сайт
+  // устойчивее (каталог/вход работают даже без preflight).
+  const hasBody = !!options.body
+  if (hasBody) {
+    headers['Content-Type'] = 'application/json'
   }
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
-  
+
   const response = await fetch(url, {
     ...options,
     headers
