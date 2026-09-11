@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://fair-rocks-kick.loca.lt/api'
+  apiUrl: 'https://fairy-civilian-manga-greatest.trycloudflare.com/api'
 };
