@@ -37,16 +37,15 @@ export function useAuthStore() {
         state.user = await api.getCurrentUser()
       } catch (error) {
         console.error('Auth init error:', error)
-        // Сетевой сбой/истёкший токен — показываем гостя, НО не удаляем токен
-        // при сетевой ошибке (туннель может быть временно недоступен), чтобы
-        // не «разлогинивать» пользователя из-за нестабильного туннеля.
-        if (error?.status !== 401) {
-          state.user = null
-        } else {
+        // Только реальный 401 (мёртвый токен) подразумевает «разлогинивание».
+        // При сетевом сбое туннеля НЕ зануляем уже установленного пользователя:
+        // иначе интерфейс «слетает» в гостя сразу после успешного входа.
+        if (error?.status === 401) {
           localStorage.removeItem(TOKEN_KEY)
           state.user = null
           initPromise = null
         }
+        // для остальных ошибок оставляем state.user как есть (что было)
       } finally {
         state.loading = false
       }
