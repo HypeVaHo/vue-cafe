@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://cold-guests-wear.loca.lt/api'
+  apiUrl: 'https://icy-cups-enter.loca.lt/api'
 };
