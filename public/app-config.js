@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://fine-grapes-hear.loca.lt/api'
+  apiUrl: 'https://fluffy-donkeys-smile.loca.lt/api'
 };
