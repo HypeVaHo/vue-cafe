@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://cemetery-organizational-homeless-automatic.trycloudflare.com/api'
+  apiUrl: 'https://flux-allowance-korea-rev.trycloudflare.com/api'
 };
