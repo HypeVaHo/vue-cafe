@@ -20,21 +20,33 @@ export function useAuthStore() {
   // но реальный запрос /auth/me уходит один раз. force=true — после логина.
   let initPromise = null
   async function init(force = false) {
-    if (initPromise && !force) return initPromise
-    initPromise = (async () => {
-      const token = localStorage.getItem(TOKEN_KEY)
-      if (!token) {
-        state.loading = false
-        state.user = null
-        return
-      }
+    const token = localStorage.getItem(TOKEN_KEY)
+    // Если токена нет — сброс состояния, без кэша (чтобы вернуться к гостю).
+    if (!token) {
+      state.loading = false
+      state.user = null
+      initPromise = null
+      return
+    }
+    // Кэш используем только если пользователь уже загружен и не форсим.
+    if (initPromise && !force && state.user) return initPromise
 
+    initPromise = (async () => {
+      state.loading = true
       try {
         state.user = await api.getCurrentUser()
       } catch (error) {
         console.error('Auth init error:', error)
-        localStorage.removeItem(TOKEN_KEY)
-        state.user = null
+        // Сетевой сбой/истёкший токен — показываем гостя, НО не удаляем токен
+        // при сетевой ошибке (туннель может быть временно недоступен), чтобы
+        // не «разлогинивать» пользователя из-за нестабильного туннеля.
+        if (error?.status !== 401) {
+          state.user = null
+        } else {
+          localStorage.removeItem(TOKEN_KEY)
+          state.user = null
+          initPromise = null
+        }
       } finally {
         state.loading = false
       }
@@ -71,10 +83,18 @@ export function useAuthStore() {
     }
   }
   
-  function handleAuthCallback(token) {
+  function handleAuthCallback(token, user = null) {
     if (!token) return false
-    
+
     localStorage.setItem(TOKEN_KEY, token)
+    // Если бэкенд сразу отдал пользователя — устанавливаем состояние мгновенно,
+    // чтобы интерфейс показал «вы вошли» без ожидания ещё одного запроса /auth/me.
+    if (user) {
+      state.user = user
+      state.loading = false
+      // Сбрасываем кэш — последующий init() пересоздаст promise с актуальным user
+      initPromise = null
+    }
     return true
   }
   

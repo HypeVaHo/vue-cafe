@@ -37,8 +37,13 @@ async function request(endpoint, options = {}) {
   })
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }))
-    throw new Error(error.error || `HTTP ${response.status}`)
+    const body = await response.json().catch(() => ({}))
+    const err = new Error(body.error || `HTTP ${response.status}`)
+    // Прикрепляем статус и тело — чтобы store мог отличить 401 (токен мёртв)
+    // от сетевого сбоя (туннель временно недоступен) и не удалять токен зря.
+    err.status = response.status
+    err.detail = body.detail
+    throw err
   }
   
   return response.json()

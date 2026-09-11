@@ -12,6 +12,9 @@ const error = ref(null)
 const processing = ref(true)
 
 onMounted(async () => {
+  // Объявляем переменную токена явно (раньше была необъявленной — ломала build)
+  let token = null
+
   // 0. Implicit Flow: access_token в URL fragment (#access_token=...&user_id=...)
   const hash = window.location.hash
   if (hash && hash.includes('access_token')) {
@@ -23,7 +26,7 @@ onMounted(async () => {
       try {
         const res = await api.vkExchangeToken({ access_token: accessToken, user_id: userId })
         token = res.token
-        auth.handleAuthCallback(res.token)
+        auth.handleAuthCallback(res.token, res.user)
         await auth.init(true)
         router.replace('/account')
         return
@@ -68,6 +71,8 @@ onMounted(async () => {
           redirect_uri: redirectUri
         })
         token = res.token
+        // Сразу сохраняем и токен, и данные пользователя — UI мгновенно покажет вход
+        auth.handleAuthCallback(res.token, res.user)
       } catch (err) {
         error.value = err.message || 'Ошибка авторизации'
         processing.value = false
