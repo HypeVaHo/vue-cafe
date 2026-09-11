@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://dull-coins-hang.loca.lt/api'
+  apiUrl: 'https://fifty-streets-sleep.loca.lt/api'
 };
