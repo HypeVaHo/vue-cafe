@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://urgent-conventions-intervals-pills.trycloudflare.com/api'
+  apiUrl: 'https://already-epa-journals-ferry.trycloudflare.com/api'
 };
