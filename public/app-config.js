@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://tidy-results-wash.loca.lt/api'
+  apiUrl: 'https://swift-needles-own.loca.lt/api'
 };
