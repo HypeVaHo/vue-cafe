@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://charles-day-honolulu-seed.trycloudflare.com/api'
+  apiUrl: 'https://additional-retreat-featuring-coding.trycloudflare.com/api'
 };
