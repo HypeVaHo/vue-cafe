@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://adapters-ooo-pearl-meditation.trycloudflare.com/api'
+  apiUrl: 'https://fireplace-waiting-designated-walker.trycloudflare.com/api'
 };
