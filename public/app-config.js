@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://references-certified-alabama-calculate.trycloudflare.com/api'
+  apiUrl: 'https://possess-batman-illinois-papua.trycloudflare.com/api'
 };
