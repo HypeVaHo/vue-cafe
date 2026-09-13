@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://grab-belong-not-cotton.trycloudflare.com/api'
+  apiUrl: 'https://southwest-bedrooms-choosing-paso.trycloudflare.com/api'
 };
