@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://cast-sense-hundred-infectious.trycloudflare.com/api'
+  apiUrl: 'https://qui-sapphire-felt-demographic.trycloudflare.com/api'
 };
