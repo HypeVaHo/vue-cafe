@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://spencer-highs-legacy-arc.trycloudflare.com/api'
+  apiUrl: 'https://pioneer-nikon-glory-climbing.trycloudflare.com/api'
 };
