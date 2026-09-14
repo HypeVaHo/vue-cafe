@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://addressed-holidays-soup-peak.trycloudflare.com/api'
+  apiUrl: 'https://disciplines-scanners-rules-among.trycloudflare.com/api'
 };
