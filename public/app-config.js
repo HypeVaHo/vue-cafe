@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://experimental-often-cartridge-likelihood.trycloudflare.com/api'
+  apiUrl: 'https://fuzzy-adaptive-delivers-walk.trycloudflare.com/api'
 };
