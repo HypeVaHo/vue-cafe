@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://pioneer-nikon-glory-climbing.trycloudflare.com/api'
+  apiUrl: 'https://lauderdale-byte-meal-prescribed.trycloudflare.com/api'
 };
