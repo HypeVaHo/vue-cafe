@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://vegetable-add-inch-leading.trycloudflare.com/api'
+  apiUrl: 'https://ppc-sbjct-headphones-claims.trycloudflare.com/api'
 };
