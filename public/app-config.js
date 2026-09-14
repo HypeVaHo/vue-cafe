@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://casual-fragrances-overview-phillips.trycloudflare.com/api'
+  apiUrl: 'https://phantom-cow-phillips-sensitivity.trycloudflare.com/api'
 };
