@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://priest-closest-gba-hope.trycloudflare.com/api'
+  apiUrl: 'https://buy-institutions-nominations-vision.trycloudflare.com/api'
 };
