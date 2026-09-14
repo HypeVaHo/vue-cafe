@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://fuzzy-adaptive-delivers-walk.trycloudflare.com/api'
+  apiUrl: 'https://managed-everyday-like-dont.trycloudflare.com/api'
 };
