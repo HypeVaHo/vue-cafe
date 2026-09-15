@@ -56,7 +56,9 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  // bypass-tunnel-reminder: обход интерстишиала «Tunnel website ahead!» (511)
+  // у localtunnel; ngrok-skip-browser-warning: то же для ngrok.
+  allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder', 'ngrok-skip-browser-warning']
 }));
 app.use(express.json());
 

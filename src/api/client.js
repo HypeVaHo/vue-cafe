@@ -61,6 +61,12 @@ async function request(endpoint, options = {}) {
     headers['Content-Type'] = 'application/json'
   }
 
+  // Обход интерстишиала «Tunnel website ahead!» (511) у localtunnel и
+  // аналогичной стены у ngrok. Без него браузерные запросы к туннелю
+  // блокируются страницей «введите пароль» ещё до того, как попадут на API.
+  headers['bypass-tunnel-reminder'] = 'true'
+  headers['ngrok-skip-browser-warning'] = 'true'
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
