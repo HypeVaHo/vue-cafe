@@ -48,14 +48,14 @@ function Update-AppConfig($url) {
     Push-Config
 }
 
-# Основной туннель — Cloudflare (TryCloudflare). Он наиболее стабилен:
-# релеи Cloudflare держатся долго и не «умирают» как LocalTunnel.
-# LocalTunnel оставлен только как последний запасной вариант.
+# Основной туннель — LocalTunnel (работает поверх WebSocket — переживает
+# NAT/DPI-таймауты провайдера). Cloudflare — запасной: на текущей сети
+# DPI рвёт его edge-соединения каждые ~40 c, из-за чего URL отдаёт 530.
 function Start-Tunnel {
-    $url = Start-TunnelCf
+    $url = Start-TunnelLt
     if ($url) { return $url }
-    Log 'Cloudflare недоступен — фолбэк на LocalTunnel...'
-    return Start-TunnelLt
+    Log 'LocalTunnel недоступен — фолбэк на Cloudflare...'
+    return Start-TunnelCf
 }
 
 function Start-TunnelCf {
@@ -94,6 +94,7 @@ function Start-TunnelCf {
     }
     Log "Туннель поднят (Cloudflare): $url"
     Set-Content -Path (Join-Path $project 'guard-tunnel.pid') -Value $p.Id
+    $script:tunnelType = 'cf'
     Update-AppConfig $url
     return $url
 }
@@ -125,6 +126,7 @@ function Start-TunnelLt {
     }
     Log "Туннель поднят (LocalTunnel): $url"
     Set-Content -Path (Join-Path $project 'guard-tunnel.pid') -Value $p.Id
+    $script:tunnelType = 'lt'
     Update-AppConfig $url
     return $url
 }
@@ -167,15 +169,24 @@ while ($true) {
         }
         elseif ($sshAlive) {
             $script:failCount++
-            if ($script:failCount -lt 2) {
-                Log 'URL не отвечает (попытка 1) — проверю ещё раз в следующем цикле'
+            # Cloudflare самовосстанавливается (DPI рвёт соединения, cloudflared
+            # переподключается за 10-20 c) — даём ему до 5 сбоев (~5 мин).
+            # LocalTunnel мёртв намертво — пересоздаём после 2 сбоев.
+            $maxFails = if ($script:tunnelType -eq 'cf') { 5 } else { 2 }
+            if ($script:failCount -lt $maxFails) {
+                Log "URL не отвечает (попытка $script:failCount из $maxFails) — подожду, туннель может восстановиться сам"
             }
             else {
-                Log 'URL не отвечает 2 раза подряд — пересоздание туннеля...'
+                Log "URL не отвечает $maxFails раз подряд — пересоздание туннеля..."
                 $script:failCount = 0
                 if ($tunnelPid) { Stop-Process -Id $tunnelPid -Force -ErrorAction SilentlyContinue }
                 Start-Sleep 3
                 Start-Tunnel | Out-Null
+                if ($script:tunnelType -eq 'cf') {
+                    # прогрев: новому hostname нужно время на маршрутизацию на edge
+                    Log 'Прогрев нового туннеля (20 c)...'
+                    Start-Sleep 20
+                }
             }
         }
         else {
