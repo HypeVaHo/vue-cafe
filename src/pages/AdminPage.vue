@@ -92,6 +92,7 @@ const productForm = ref({
   category_id: null,
   description: '',
   price: '',
+  quantity: 0,
   image_url: '',
   is_available: true
 })
@@ -213,6 +214,7 @@ function openProductForm(product = null) {
       category_id: categories.value[0]?.id || null,
       description: '',
       price: '',
+      quantity: 0,
       image_url: '',
       is_available: true
     }
@@ -398,6 +400,7 @@ onMounted(async () => {
                 <th>Название</th>
                 <th>Категория</th>
                 <th>Цена</th>
+                <th>Запас</th>
                 <th>Статус</th>
                 <th>Действия</th>
               </tr>
@@ -410,6 +413,11 @@ onMounted(async () => {
                 </td>
                 <td>{{ product.category_name || '—' }}</td>
                 <td>{{ formatCurrency(product.price) }}</td>
+                <td>
+                  <span :class="['status-badge', (product.quantity ?? 0) > 0 ? 'status-badge--active' : 'status-badge--inactive']">
+                    {{ product.quantity ?? 0 }} шт.
+                  </span>
+                </td>
                 <td>
                   <span 
                     :class="['status-badge', product.is_available ? 'status-badge--active' : 'status-badge--inactive']"
@@ -651,6 +659,11 @@ onMounted(async () => {
           <label>
             <span>Цена</span>
             <input v-model="productForm.price" type="number" step="0.01" required />
+          </label>
+
+          <label>
+            <span>Количество (0 = скрыть из меню)</span>
+            <input v-model.number="productForm.quantity" type="number" min="0" step="1" />
           </label>
           
           <label>

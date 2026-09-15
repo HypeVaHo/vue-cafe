@@ -75,26 +75,54 @@ export async function sendUserMessage(vkUserId, message) {
 }
 
 /**
- * Рассылка пекарям и админам: появился новый заказ
+ * Рассылка админам (и главному админу): появился новый заказ + его содержимое.
+ * order_id берём из БД — имя клиента и состав заказа подгружаются автоматически.
  */
-export async function notifyBakersAboutNewOrder(orderId, total, itemsCount) {
+export async function notifyAdminsAboutNewOrder(orderId) {
   if (!process.env.VK_COMMUNITY_TOKEN) return false;
   try {
     const { query } = await import('../config/database.js');
-    const bakers = await query(
-      "SELECT vk_id FROM users WHERE role IN ('baker','admin') AND vk_id IS NOT NULL"
+
+    // Получатели: все обычные админы + главный админ
+    const admins = await query(
+      "SELECT vk_id, first_name FROM users WHERE (role = 'admin' OR is_super_admin = 1) AND vk_id IS NOT NULL"
     );
-    const message = `🥐 Новый заказ #${orderId} — позиций: ${itemsCount}, сумма ${total} ₽. Проверьте панель пекаря!`;
+    if (admins.recordset.length === 0) return false;
+
+    // Состав заказа
+    const items = await query(
+      'SELECT product_name, quantity, price FROM order_items WHERE order_id = @id ORDER BY id',
+      { id: orderId }
+    );
+
+    const orderRow = await query(
+      `SELECT o.total, o.comment, u.first_name + ' ' + u.last_name AS customer
+       FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = @id`,
+      { id: orderId }
+    );
+    const order = orderRow.recordset[0] || {};
+
+    const lines = (items.recordset || []).map(
+      (it) => `• ${it.product_name} × ${it.quantity} — ${Math.round(Number(it.price) * it.quantity)} ₽`
+    );
+
+    const message =
+      `🧾 Новый заказ #${orderId}\n` +
+      (order.customer ? `От: ${order.customer}\n` : '') +
+      (lines.length ? lines.join('\n') + '\n' : '') +
+      `Итого: ${Math.round(Number(order.total) || 0)} ₽` +
+      (order.comment ? `\nКомментарий: ${order.comment}` : '');
+
     let sent = 0;
-    for (const row of bakers.recordset) {
+    for (const row of admins.recordset) {
       const ok = await sendUserMessage(row.vk_id, message);
       if (ok) sent += 1;
       await new Promise((r) => setTimeout(r, 150));
     }
-    console.log(`Baker notifications: sent ${sent}/${bakers.recordset.length}`);
+    console.log(`Admin notifications: sent ${sent}/${admins.recordset.length} (order #${orderId})`);
     return sent > 0;
   } catch (error) {
-    console.error('notifyBakersAboutNewOrder error:', error.message);
+    console.error('notifyAdminsAboutNewOrder error:', error.message);
     return false;
   }
 }

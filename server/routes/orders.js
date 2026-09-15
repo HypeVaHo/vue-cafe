@@ -2,7 +2,7 @@
 import { query, getPool, sql } from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/roles.js';
-import { sendOrderNotification, notifyBakersAboutNewOrder } from '../services/vkNotifications.js';
+import { sendOrderNotification, notifyAdminsAboutNewOrder } from '../services/vkNotifications.js';
 
 const router = Router();
 
@@ -139,7 +139,7 @@ router.post('/', authenticate, async (req, res) => {
     const productsRequest = new sql.Request(transaction);
     productIds.forEach((id, i) => productsRequest.input(`p${i}`, sql.Int, id));
     const productsResult = await productsRequest.query(
-      `SELECT id, name, price, is_available FROM products WHERE id IN (${placeholders})`
+      `SELECT id, name, price, quantity, is_available FROM products WHERE id IN (${placeholders})`
     );
 
     const productMap = new Map(productsResult.recordset.map(p => [p.id, p]));
@@ -165,6 +165,11 @@ router.post('/', authenticate, async (req, res) => {
       if (quantity < 1) {
         await transaction.rollback();
         return res.status(400).json({ error: 'РљРѕР»РёС‡РµСЃС‚РІРѕ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ 0' });
+      }
+
+      if ((product.quantity ?? 0) < quantity) {
+        await transaction.rollback();
+        return res.status(400).json({ error: 'Недостаточно товара "' + product.name + '" в наличии (осталось ' + (product.quantity ?? 0) + ')' });
       }
 
       const itemTotal = parseFloat(product.price) * quantity;
@@ -207,6 +212,15 @@ router.post('/', authenticate, async (req, res) => {
         `);
     }
 
+    // Списание со склада: при достижении 0 товар автоматически скрывается из меню
+    for (const item of validatedItems) {
+      const stockReq = new sql.Request(transaction);
+      await stockReq
+        .input('productId', sql.Int, item.product_id)
+        .input('qty', sql.Int, item.quantity)
+        .query('UPDATE products SET quantity = quantity - @qty, is_available = CASE WHEN quantity - @qty <= 0 THEN 0 ELSE is_available END WHERE id = @productId');
+    }
+
     await transaction.commit();
 
     // Fetch created order
@@ -217,8 +231,8 @@ router.post('/', authenticate, async (req, res) => {
     res.status(201).json(order);
 
     // РЈРІРµРґРѕРјР»СЏРµРј РїРµРєР°СЂРµР№ Рѕ РЅРѕРІРѕРј Р·Р°РєР°Р·Рµ (С„РѕРЅ, РЅРµ Р±Р»РѕРєРёСЂСѓРµС‚ РѕС‚РІРµС‚ РєР»РёРµРЅС‚Сѓ)
-    notifyBakersAboutNewOrder(order.id, order.total, order.items?.length || 0)
-      .catch((e) => console.error('Baker notify error:', e.message));
+    notifyAdminsAboutNewOrder(order.id)
+      .catch((e) => console.error('Admin notify error:', e.message));
   } catch (error) {
     await transaction.rollback();
     console.error('Create order error:', error);
@@ -263,6 +277,20 @@ router.patch('/:id/status', authenticate, requirePermission('orders'), async (re
       'UPDATE orders SET status = @status, updated_at = GETDATE() WHERE id = @id',
       { status, id: parseInt(req.params.id) }
     );
+
+    // Возврат товара на склад при отмене заказа
+    if (status === 'cancelled') {
+      const itemsForRestock = await query(
+        'SELECT product_id, quantity FROM order_items WHERE order_id = @id',
+        { id: parseInt(req.params.id) }
+      );
+      for (const it of itemsForRestock.recordset) {
+        await query(
+          'UPDATE products SET quantity = quantity + @qty, is_available = 1 WHERE id = @pid',
+          { qty: it.quantity, pid: it.product_id }
+        );
+      }
+    }
 
     // Send VK notification
     try {

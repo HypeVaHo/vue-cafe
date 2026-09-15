@@ -65,7 +65,7 @@ const initials = computed(() => {
 
 // Логотип в шапке: первая картинка из меню, иначе фавиконка
 const brandImage = computed(
-  () => store.state.products[0]?.image || `${import.meta.env.BASE_URL}favicon.svg`
+  () => store.state.products[0]?.image || `${import.meta.env.BASE_URL}logo.png`
 )
 
 async function handleLogout() {
