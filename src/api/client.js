@@ -12,23 +12,23 @@ function getToken() {
 }
 
 // Туннель может кратковременно отвечать 502/503/511 или обрывать соединение.
-// Для идемпотентных GET-запросов делаем до 2 повторов с паузой — это делает
-// интерфейс устойчивым к «морганию» бесплатного туннеля.
+// Для идемпотентных GET-запросов делаем до 3 повторов с растущей паузой —
+// это делает интерфейс устойчивым к «морганию» бесплатного туннеля.
 const RETRYABLE_STATUS = new Set([502, 503, 504, 511, 429])
-const RETRY_DELAY_MS = 1200
+const RETRY_DELAYS_MS = [1200, 2500, 4000]
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function fetchWithRetry(url, options, retries = 2) {
+async function fetchWithRetry(url, options, retries = 3) {
   let lastError
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await fetch(url, options)
       const isRetryable = RETRYABLE_STATUS.has(response.status)
       if (isRetryable && attempt < retries) {
-        await sleep(RETRY_DELAY_MS)
+        await sleep(RETRY_DELAYS_MS[attempt] || 1200)
         continue
       }
       return response
@@ -36,7 +36,7 @@ async function fetchWithRetry(url, options, retries = 2) {
       // Сетевой сбой (fetch бросает TypeError) — повторяем
       lastError = error
       if (attempt < retries) {
-        await sleep(RETRY_DELAY_MS)
+        await sleep(RETRY_DELAYS_MS[attempt] || 1200)
         continue
       }
       throw error

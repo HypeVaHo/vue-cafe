@@ -140,13 +140,38 @@ function Test-Url($base) {
     } catch { return $false }
 }
 
+# Внешняя проверка через check-host.net (узлы Швеция/Турция/Иран).
+# Локальная проверка идёт с того же IP, что и туннель, и не отражает того,
+# что видит посетитель (RU-провайдеры деградируют доступ к релеям).
+function Test-External($base) {
+    if (-not $base) { return $false }
+    try {
+        $esc = [uri]::EscapeDataString("$base/api/health")
+        $r = Invoke-WebRequest -Uri "https://check-host.net/check-http?host=$esc&max_nodes=1" -Headers @{ 'Accept' = 'application/json' } -UseBasicParsing -TimeoutSec 15
+        $rid = ($r.Content | ConvertFrom-Json).request_id
+        if (-not $rid) { return $false }
+        Start-Sleep 12
+        $rr = Invoke-WebRequest -Uri "https://check-host.net/check-result/$rid" -Headers @{ 'Accept' = 'application/json' } -UseBasicParsing -TimeoutSec 15
+        $res = ($rr.Content | ConvertFrom-Json)
+        foreach ($prop in $res.PSObject.Properties) {
+            foreach ($attempt in $prop.Value) {
+                if ($attempt.Count -ge 4 -and $attempt[3] -eq 200) { return $true }
+            }
+        }
+        return $false
+    } catch {
+        Log ("Внешняя проверка недоступна: " + $_.Exception.Message)
+        return $false
+    }
+}
+
 function Get-NodePidsOnPort([int]$port) {
     (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) |
         Select-Object -ExpandProperty OwningProcess -Unique
 }
 
 Set-Location $project
-Log '=== Сторож сервера v3 (Cloudflare) запущен ==='
+Log '=== Сторож сервера v5 (LT/CF + внешняя верификация check-host) запущен ==='
 
 while ($true) {
     try {
@@ -168,24 +193,32 @@ while ($true) {
             # всё работает — ничего не делаем
         }
         elseif ($sshAlive) {
-            $script:failCount++
-            # Cloudflare самовосстанавливается (DPI рвёт соединения, cloudflared
-            # переподключается за 10-20 c) — даём ему до 5 сбоев (~5 мин).
-            # LocalTunnel мёртв намертво — пересоздаём после 2 сбоев.
-            $maxFails = if ($script:tunnelType -eq 'cf') { 5 } else { 2 }
-            if ($script:failCount -lt $maxFails) {
-                Log "URL не отвечает (попытка $script:failCount из $maxFails) — подожду, туннель может восстановиться сам"
+            # Локальная проверка не прошла. Проверяем ИЗВНЕ — то, что реально
+            # видит посетитель (локальный путь может деградировать отдельно).
+            if (Test-External $apiUrl) {
+                $script:failCount = 0
+                Log 'Локально не отвечает, но извне туннель отдаёт 200 — не пересоздаю'
             }
             else {
-                Log "URL не отвечает $maxFails раз подряд — пересоздание туннеля..."
-                $script:failCount = 0
-                if ($tunnelPid) { Stop-Process -Id $tunnelPid -Force -ErrorAction SilentlyContinue }
-                Start-Sleep 3
-                Start-Tunnel | Out-Null
-                if ($script:tunnelType -eq 'cf') {
-                    # прогрев: новому hostname нужно время на маршрутизацию на edge
-                    Log 'Прогрев нового туннеля (20 c)...'
-                    Start-Sleep 20
+                $script:failCount++
+                # Cloudflare самовосстанавливается (DPI рвёт соединения, cloudflared
+                # переподключается за 10-20 c) — даём ему до 5 сбоев (~5 мин).
+                # LocalTunnel мёртв намертво — пересоздаём после 2 сбоев.
+                $maxFails = if ($script:tunnelType -eq 'cf') { 5 } else { 2 }
+                if ($script:failCount -lt $maxFails) {
+                    Log "URL не отвечает (попытка $script:failCount из $maxFails) — подожду, туннель может восстановиться сам"
+                }
+                else {
+                    Log "URL не отвечает $maxFails раз подряд (и извне тоже) — пересоздание туннеля..."
+                    $script:failCount = 0
+                    if ($tunnelPid) { Stop-Process -Id $tunnelPid -Force -ErrorAction SilentlyContinue }
+                    Start-Sleep 3
+                    Start-Tunnel | Out-Null
+                    if ($script:tunnelType -eq 'cf') {
+                        # прогрев: новому hostname нужно время на маршрутизацию на edge
+                        Log 'Прогрев нового туннеля (20 c)...'
+                        Start-Sleep 20
+                    }
                 }
             }
         }
