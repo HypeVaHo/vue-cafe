@@ -78,22 +78,20 @@ async function pollOrders() {
     // моргание туннеля — пропускаем цикл, spinner не включаем
   }
 }
-onMounted(() => {
-  statusPollTimer = setInterval(pollOrders, 15000)
-})
-onBeforeUnmount(() => {
-  if (statusPollTimer) clearInterval(statusPollTimer)
-})
-
 onMounted(async () => {
+  statusPollTimer = setInterval(pollOrders, 15000)
+
   await auth.init()
-  
+
   if (!auth.isAuthenticated.value) {
     router.replace('/login')
     return
   }
-  
+
   await loadOrders()
+})
+onBeforeUnmount(() => {
+  if (statusPollTimer) clearInterval(statusPollTimer)
 })
 </script>
 

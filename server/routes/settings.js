@@ -31,6 +31,7 @@ const router = Router();
 // Ключи, которые можно менять через API
 const ALLOWED_KEYS = [
   'site_name',
+  'site_tagline',
   'cafe_address',
   'work_hours',
   'phone',
@@ -67,14 +68,12 @@ router.put('/', authenticate, requireSuperAdmin, async (req, res) => {
 
     for (const [key, value] of Object.entries(updates)) {
       if (!ALLOWED_KEYS.includes(key)) continue;
-      await query(
-        `MERGE site_settings AS t
-         USING (SELECT @k AS k, @v AS v) AS src
-         ON t.setting_key = src.k
-         WHEN MATCHED THEN UPDATE SET setting_value = src.v
-         WHEN NOT MATCHED THEN INSERT (setting_key, setting_value) VALUES (src.k, src.v);`,
-        { k: key, v: String(value ?? '') }
-      );
+      const val = String(value ?? '');
+      await query('UPDATE site_settings SET setting_value = @v WHERE setting_key = @k', { k: key, v: val });
+      const existing = await query('SELECT 1 FROM site_settings WHERE setting_key = @k', { k: key });
+      if (existing.recordset.length === 0) {
+        await query('INSERT INTO site_settings (setting_key, setting_value) VALUES (@k, @v)', { k: key, v: val });
+      }
       applied.push(key);
     }
 

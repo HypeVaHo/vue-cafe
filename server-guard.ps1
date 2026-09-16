@@ -31,10 +31,15 @@ function Get-CurrentApiUrl {
 
 function Push-Config {
     Set-Location $project
-    git add public/app-config.js 2>$null
-    git commit -m "Update API tunnel URL [auto]" *> $null
-    git push *> $null
-    Log 'Push выполнен. Pages обновится через ~2-3 минуты.'
+    # Настройки сайта тоже «в коде»: файл site-settings.json коммитим вместе
+    # с app-config.js, чтобы сохранённые настройки не терялись и попадали в репозиторий.
+    git add public/app-config.js server/site-settings.json 2>$null
+    git diff --cached --quiet 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        git commit -m "Update API tunnel URL / site settings [auto]" *> $null
+        git push *> $null
+        Log 'Push выполнен. Pages обновится через ~2-3 минуты.'
+    }
 }
 
 function Update-AppConfig($url) {

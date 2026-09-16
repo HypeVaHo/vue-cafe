@@ -832,7 +832,10 @@ onMounted(async () => {
 .table-container {
   background: var(--color-card, #fff);
   border-radius: 12px;
-  overflow: hidden;
+  /* На телефоне таблица шире экрана — даём горизонтальную прокрутку,
+     иначе кнопки «Ред./Удл.» обрезались (overflow: hidden). */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-table {

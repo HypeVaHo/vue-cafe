@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBakeryStore } from '../stores/bakeryStore'
 import { useAuthStore } from '../stores/authStore'
+import { useSettings } from '../stores/settingsStore'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,15 +16,27 @@ watch(() => route.fullPath, () => {
 
 const store = useBakeryStore()
 const auth = useAuthStore()
+const settings = useSettings()
+const site = settings.state
 
 onMounted(() => {
   store.init()
   auth.init()
+  settings.load()
 })
 
-// Ссылки на сообщество и бота VK (уведомления о заказах приходят из сообщества)
-const VK_COMMUNITY_URL = 'https://vk.com/club239108717'
-const VK_BOT_URL = 'https://vk.me/club239108717'
+// Заголовок вкладки берём из настроек сайта
+watch(
+  () => site.site_name,
+  (name) => {
+    if (name) document.title = name
+  },
+  { immediate: true }
+)
+
+// Ссылки на сообщество и бота VK приходят из настроек сайта
+const VK_COMMUNITY_URL = computed(() => site.vk_community_url)
+const VK_BOT_URL = computed(() => site.vk_bot_url)
 
 const isAuthed = auth.isAuthenticated
 const isAdmin = auth.isAdmin
@@ -39,7 +52,7 @@ const links = computed(() => {
   if (!isAuthed.value) {
     return [...base, { path: '/login', label: 'Войти' }]
   }
-  if (isAdmin.value) {
+        if (isAdmin.value) {
     return [...base, { path: '/account', label: 'Кабинет' }, { path: '/admin', label: 'Админ-панель' }]
   }
   if (auth.state.user?.role === 'baker') {
@@ -63,10 +76,8 @@ const initials = computed(() => {
   return `${u?.first_name?.[0] || ''}${u?.last_name?.[0] || ''}`.toUpperCase()
 })
 
-// Логотип в шапке: первая картинка из меню, иначе фавиконка
-const brandImage = computed(
-  () => store.state.products[0]?.image || `${import.meta.env.BASE_URL}logo.png`
-)
+// Логотип сайта (лёгкий круглый PNG с прозрачным фоном)
+const brandImage = `${import.meta.env.BASE_URL}logo.png`
 
 async function handleLogout() {
   navOpen.value = false
@@ -78,19 +89,23 @@ async function handleLogout() {
 <template>
   <div class="page-shell">
     <header class="site-header">
-      <a class="brand" href="/" aria-label="Студенческое кафе">
+      <RouterLink class="brand" to="/" :aria-label="site.site_name || 'СтудFood'">
         <span class="brand-mark" aria-hidden="true">
           <img
             :src="brandImage"
             alt=""
+            width="192"
+            height="192"
+            decoding="async"
+            fetchpriority="high"
           />
         </span>
 
         <span class="brand-copy">
-          <strong>Студенческое кафе «СтудFood»</strong>
-          <small>вкусно, быстро, рядом</small>
+          <strong>{{ site.site_name }}</strong>
+          <small>{{ site.site_tagline }}</small>
         </span>
-      </a>
+      </RouterLink>
 
       <button class="burger" type="button" @click="toggleNav" aria-label="Открыть меню">
         ☰
@@ -181,14 +196,16 @@ async function handleLogout() {
 
     <footer class="site-footer">
       <div>
-        <h3>Студенческое кафе «СтудFood»</h3>
-        <p>Корпус №1, 1 этаж</p>
-        <p>Пн–Пт 8:00–17:00</p>
+        <h3>{{ site.site_name }}</h3>
+        <p>{{ site.cafe_address }}</p>
+        <p>{{ site.work_hours }}</p>
       </div>
 
       <div>
         <h4>Контакты</h4>
-        <p>+7 (900) 123-45-67</p>
+        <p v-if="site.phone">
+          <a class="text-link" :href="`tel:${String(site.phone).replace(/[^+\d]/g, '')}`">{{ site.phone }}</a>
+        </p>
         <a
           class="text-link"
           :href="VK_COMMUNITY_URL"

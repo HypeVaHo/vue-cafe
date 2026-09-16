@@ -2,10 +2,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import { useSettings } from '../stores/settingsStore'
 import { api } from '../api/client'
 
 const router = useRouter()
 const auth = useAuthStore()
+const settingsStore = useSettings()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -14,6 +16,7 @@ const success = ref(null)
 
 const settings = ref({
   site_name: '',
+  site_tagline: '',
   cafe_address: '',
   work_hours: '',
   phone: '',
@@ -23,6 +26,7 @@ const settings = ref({
 
 const fieldLabels = {
   site_name: 'Название сайта',
+  site_tagline: 'Подзаголовок (в шапке)',
   cafe_address: 'Адрес кафе',
   work_hours: 'Часы работы',
   phone: 'Телефон',
@@ -32,10 +36,12 @@ const fieldLabels = {
 
 async function loadSettings() {
   try {
+    // Берём и с сервера, и из кеша стора — форма не пустая даже при сбое сети
     const data = await api.getSettings()
-    settings.value = { ...settings.value, ...data }
+    settings.value = { ...settings.value, ...settingsStore.state, ...data }
   } catch (err) {
-    error.value = 'Ошибка загрузки настроек: ' + err.message
+    settings.value = { ...settings.value, ...settingsStore.state, ...settingsStore.DEFAULTS }
+    error.value = 'Не удалось загрузить настройки с сервера — показаны последние сохранённые'
   } finally {
     loading.value = false
   }
@@ -45,9 +51,11 @@ async function saveSettings() {
   saving.value = true
   error.value = null
   success.value = null
-  
+
   try {
-    await api.updateSettings(settings.value)
+    const res = await api.updateSettings(settings.value)
+    // Сразу применяем: шапка, футер и контакты обновляются без перезагрузки
+    settingsStore.apply(res?.settings || settings.value)
     success.value = 'Настройки сохранены'
     setTimeout(() => { success.value = null }, 3000)
   } catch (err) {
@@ -59,12 +67,13 @@ async function saveSettings() {
 
 onMounted(async () => {
   await auth.init()
-  
-  if (!auth.isAdmin.value) {
-    router.replace('/')
+
+  // Настройки сайта меняет только главный админ
+  if (!auth.isSuperAdmin.value) {
+    router.replace('/admin')
     return
   }
-  
+
   await loadSettings()
 })
 </script>
