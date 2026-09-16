@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://fine-spiders-pay.loca.lt/api'
+  apiUrl: 'https://fruity-tips-hear.loca.lt/api'
 };
