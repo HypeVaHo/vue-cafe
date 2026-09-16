@@ -1,4 +1,4 @@
 // Konfig: auto by server-guard.ps1
 window.APP_CONFIG = {
-  apiUrl: 'https://wet-plants-divide.loca.lt/api'
+  apiUrl: 'https://wet-sloths-rush.loca.lt/api'
 };
