@@ -29,3 +29,7 @@ server/.env
 guard-tunnel.pid
 server-guard.log
 
+
+# Secrets and binaries (not committed)
+tokens.json
+cloudflared.exe
