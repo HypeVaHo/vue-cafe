@@ -76,8 +76,26 @@ const initials = computed(() => {
   return `${u?.first_name?.[0] || ''}${u?.last_name?.[0] || ''}`.toUpperCase()
 })
 
-// Логотип сайта (лёгкий круглый PNG с прозрачным фоном)
-const brandImage = `${import.meta.env.BASE_URL}logo.png`
+// Логотип сайта (лёгкий круглый PNG с прозрачным фоном).
+// Источники по порядку:
+//   1) logoUrl из public/app-config.js — адрес на GitHub (сайт живёт на
+//      GitHub Pages, поэтому логотип не зависит от локального сервера/туннеля);
+//   2) файл прямо из репозитория на GitHub (raw) — отдаётся всегда, даже
+//      если артефакт Pages устарел или потерял картинку при сборке;
+//   3) локальная копия — если GitHub недоступен.
+const LOGO_SOURCES = [
+  window.APP_CONFIG?.logoUrl,
+  'https://raw.githubusercontent.com/HypeVaHo/vue-cafe/main/public/logo.png',
+  `${import.meta.env.BASE_URL}logo.png`
+].filter(Boolean)
+
+const logoIndex = ref(0)
+const brandImage = computed(() => LOGO_SOURCES[logoIndex.value] || LOGO_SOURCES[0])
+
+// Плавный откат на следующий источник при ошибке загрузки картинки.
+function onLogoError() {
+  if (logoIndex.value < LOGO_SOURCES.length - 1) logoIndex.value += 1
+}
 
 async function handleLogout() {
   navOpen.value = false
@@ -98,6 +116,7 @@ async function handleLogout() {
             height="192"
             decoding="async"
             fetchpriority="high"
+            @error="onLogoError"
           />
         </span>
 
