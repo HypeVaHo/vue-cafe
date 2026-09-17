@@ -19,6 +19,23 @@
       })();
     </script>
     <script src="/app-config.js"></script>
+    <script>
+      // Логотип/favicon всегда тянем напрямую с GitHub, чтобы они не
+      // зависели от локального сервера и от туннеля.
+      (function () {
+        try {
+          var cfg = window.APP_CONFIG || {};
+          var logo = cfg.logoUrl;
+          if (!logo) return;
+          var link = document.querySelector('link[rel="icon"]');
+          if (link) link.href = logo;
+          var apple = document.createElement('link');
+          apple.rel = 'apple-touch-icon';
+          apple.href = logo;
+          document.head.appendChild(apple);
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
