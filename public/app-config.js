@@ -5,6 +5,6 @@
 // Меняется только если сторож поднимет другой туннель — тогда файл
 // перепишется автоматически и уйдёт в GitHub вместе с коммитом.
 window.APP_CONFIG = {
-  apiUrl: 'https://wet-wasp-9.loca.lt/api',
+  apiUrl: 'https://quiet-ape-25.loca.lt/api',
   logoUrl: 'https://hypevaho.github.io/vue-cafe/logo.png'
 };
