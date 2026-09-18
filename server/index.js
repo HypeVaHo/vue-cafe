@@ -62,6 +62,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Статика: лого, favicon, иконки — отдаём из public/
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
 // Маршрут preflight для всех путей (совместимо с Express 5 / path-to-regexp v8).
 // Используем app.all + regex, чтобы не ломаться на '*' как литеральном маршруте.
 app.all(/^\/.*$/, (req, res, next) => {

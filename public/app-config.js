@@ -1,9 +1,7 @@
 // Konfig: auto by server-guard.ps1
-// apiUrl — постоянный адрес API (LocalTunnel с фиксированным поддоменом).
-// logoUrl — логотип всегда берём прямо с GitHub (сайт на GitHub Pages),
-//           чтобы он не зависел от работы локального сервера/туннеля.
-// Меняется только если сторож поднимет другой туннель — тогда файл
-// перепишется автоматически и уйдёт в GitHub вместе с коммитом.
+// apiUrl  - live api address (LocalTunnel).
+// logoUrl - logo is always loaded straight from GitHub, so it
+//           does not depend on the local server or the tunnel.
 window.APP_CONFIG = {
   apiUrl: 'https://studfood-cafe.loca.lt/api',
   logoUrl: 'https://hypevaho.github.io/vue-cafe/logo.png'

@@ -26,8 +26,10 @@ npm-debug.log*
 # Server specific
 server/.env
 
+logs/
 guard-tunnel.pid
-server-guard.log
+guard.pid
+guard-tunnel.json
 
 
 # Secrets and binaries (not committed)
