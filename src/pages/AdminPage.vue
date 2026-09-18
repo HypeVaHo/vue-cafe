@@ -70,6 +70,8 @@ function togglePermissionDraft(key, checked) {
 
 // State
 const activeTab = ref('dashboard')
+// Мобильный бургер админ-меню: открытый/закрытый список разделов
+const navOpen = ref(false)
 const loading = ref(true)
 const error = ref(null)
 
@@ -172,6 +174,7 @@ async function loadAnalytics() {
 
 async function switchTab(tab) {
   activeTab.value = tab
+  navOpen.value = false
   loading.value = true
   error.value = null
   
@@ -326,30 +329,40 @@ onMounted(async () => {
     <aside class="admin-sidebar">
       <div class="admin-logo">
         <h2>Админ</h2>
+        <!-- Бургер: на телефоне раскрывает полный список разделов -->
+        <button
+          class="admin-burger"
+          type="button"
+          :aria-expanded="navOpen"
+          aria-label="Меню админки"
+          @click="navOpen = !navOpen"
+        >
+          ☰
+        </button>
       </div>
       
-      <nav class="admin-nav">
+      <nav class="admin-nav" :class="{ 'is-open': navOpen }">
         <button
           v-for="tab in visibleTabs"
           :key="tab.key"
           :class="['nav-item', { active: activeTab === tab.key }]"
-          @click="switchTab(tab.key)"
+          @click="switchTab(tab.key); navOpen = false"
         >
           {{ tab.label }}
         </button>
         <button
           v-if="isSuperAdmin"
           :class="['nav-item', { active: activeTab === 'analytics' }]"
-          @click="switchTab('analytics')"
+          @click="switchTab('analytics'); navOpen = false"
         >
           Аналитика
         </button>
-        <RouterLink v-if="isSuperAdmin" class="nav-item" to="/admin/settings">
+        <RouterLink v-if="isSuperAdmin" class="nav-item" to="/admin/settings" @click="navOpen = false">
           ⚙ Настройки сайта
         </RouterLink>
       </nav>
       
-      <RouterLink to="/account" class="nav-item nav-item--back">
+      <RouterLink to="/account" class="nav-item nav-item--back" @click="navOpen = false">
         Назад в кабинет
       </RouterLink>
     </aside>
@@ -407,18 +420,18 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr v-for="product in products" :key="product.id">
-                <td>
+                <td data-label="Товар">
                   <strong>{{ product.name }}</strong>
                   <small v-if="product.description">{{ product.description.slice(0, 50) }}...</small>
                 </td>
-                <td>{{ product.category_name || '—' }}</td>
-                <td>{{ formatCurrency(product.price) }}</td>
-                <td>
+                <td data-label="Категория">{{ product.category_name || '—' }}</td>
+                <td data-label="Цена">{{ formatCurrency(product.price) }}</td>
+                <td data-label="Запас">
                   <span :class="['status-badge', (product.quantity ?? 0) > 0 ? 'status-badge--active' : 'status-badge--inactive']">
                     {{ product.quantity ?? 0 }} шт.
                   </span>
                 </td>
-                <td>
+                <td data-label="Статус">
                   <span 
                     :class="['status-badge', product.is_available ? 'status-badge--active' : 'status-badge--inactive']"
                     @click="toggleProductAvailability(product)"
@@ -427,7 +440,7 @@ onMounted(async () => {
                     {{ product.is_available ? 'В наличии' : 'Недоступен' }}
                   </span>
                 </td>
-                <td>
+                <td data-label="Действия">
                   <button class="btn-icon" @click="openProductForm(product)">Ред.</button>
                   <button class="btn-icon btn-icon--danger" @click="deleteProduct(product.id)">Удл.</button>
                 </td>
@@ -458,10 +471,10 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr v-for="category in categories" :key="category.id">
-                <td><strong>{{ category.name }}</strong></td>
-                <td><code>{{ category.slug }}</code></td>
-                <td>{{ category.sort_order }}</td>
-                <td>
+                <td data-label="Название"><strong>{{ category.name }}</strong></td>
+                <td data-label="Slug"><code>{{ category.slug }}</code></td>
+                <td data-label="Порядок">{{ category.sort_order }}</td>
+                <td data-label="Действия">
                   <button class="btn-icon" @click="openCategoryForm(category)">Ред.</button>
                   <button class="btn-icon btn-icon--danger" @click="deleteCategory(category.id)">Удл.</button>
                 </td>
@@ -488,15 +501,15 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr v-for="order in orders" :key="order.id">
-                <td><strong>#{{ order.id }}</strong></td>
-                <td>{{ order.first_name }} {{ order.last_name }}</td>
-                <td>{{ formatCurrency(order.total) }}</td>
-                <td>
+                <td data-label="Заказ"><strong>#{{ order.id }}</strong></td>
+                <td data-label="Клиент">{{ order.first_name }} {{ order.last_name }}</td>
+                <td data-label="Сумма">{{ formatCurrency(order.total) }}</td>
+                <td data-label="Статус">
                   <span :class="['status-badge', `status-badge--${order.status}`]">
                     {{ order.status }}
                   </span>
                 </td>
-                <td>{{ formatDate(order.created_at) }}</td>
+                <td data-label="Дата">{{ formatDate(order.created_at) }}</td>
               </tr>
             </tbody>
           </table>
@@ -520,15 +533,15 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr v-for="user in users" :key="user.id">
-                <td>
+                <td data-label="Пользователь">
                   <div class="user-cell">
                     <img v-if="user.photo_url" :src="user.photo_url" class="user-avatar" />
                     <span>{{ user.first_name }} {{ user.last_name }}</span>
                     <span v-if="user.is_super_admin" class="super-badge">Главный админ</span>
                   </div>
                 </td>
-                <td>{{ user.vk_id }}</td>
-                <td>
+                <td data-label="VK ID">{{ user.vk_id }}</td>
+                <td data-label="Роль">
                   <div class="role-cell">
                     <select
                       :value="user.role"
@@ -549,8 +562,8 @@ onMounted(async () => {
                     </button>
                   </div>
                 </td>
-                <td>{{ formatDate(user.created_at) }}</td>
-                <td>
+                <td data-label="Регистрация">{{ formatDate(user.created_at) }}</td>
+                <td data-label="Переход">
                   <RouterLink class="btn-icon" to="/account" title="Личный кабинет пользователя">
                     Кабинет
                   </RouterLink>
@@ -596,9 +609,9 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr v-for="item in analytics.popular?.products" :key="item.product_id">
-                <td>{{ item.product_name }}</td>
-                <td>{{ item.total_sold }}</td>
-                <td>{{ formatCurrency(item.total_revenue) }}</td>
+                <td data-label="Товар">{{ item.product_name }}</td>
+                <td data-label="Продано">{{ item.total_sold }}</td>
+                <td data-label="Выручка">{{ formatCurrency(item.total_revenue) }}</td>
               </tr>
             </tbody>
           </table>
@@ -1085,37 +1098,51 @@ onMounted(async () => {
     margin: 0;
   }
 
-  /* Табы: горизонтальный скролл вместо переноса — все пункты
-     доступны одним свайпом, не растягиваются на 2+ строки */
-  .admin-nav {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 6px;
-    padding: 8px 10px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+  /* Бургер: на телефоне раскрывает меню админки списком */
+  .admin-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f7fafc;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--color-text);
   }
 
-  .admin-nav::-webkit-scrollbar {
+  .admin-burger:active {
+    background: #edf2f7;
+  }
+
+  /* Меню скрыто по умолчанию; по тапу на бургер — полный список разделов */
+  .admin-nav {
     display: none;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px 12px;
+  }
+
+  .admin-nav.is-open {
+    display: flex;
   }
 
   .nav-item {
-    flex: 0 0 auto;
-    width: auto;
-    min-height: 42px;
-    display: inline-flex;
+    width: 100%;
+    min-height: 44px;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 999px;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
     background: #f7fafc;
     border: 1px solid #e2e8f0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
-    text-align: center;
-    white-space: nowrap;
+    text-align: left;
   }
 
   .nav-item.active {
@@ -1126,8 +1153,7 @@ onMounted(async () => {
 
   .nav-item--back {
     border-top: none;
-    margin-top: 0;
-    margin-left: auto;
+    margin-top: 4px;
   }
 
   /* --- Контент --- */
@@ -1312,3 +1338,79 @@ onMounted(async () => {
   }
 }
 </style>
+
+/* ============================================================
+   ополнения адаптации: бургер на десктопе скрыт; таблицы на
+   телефоне превращаются в карточки (подписи из data-label).
+   ============================================================ */
+@media (min-width: 769px) {
+  .admin-burger {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* --- Таблица -> карточки --- */
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table,
+  .admin-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-table tr {
+    display: block;
+    background: var(--color-card, #fff);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .admin-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+    border: none;
+    text-align: right;
+    overflow-wrap: break-word;
+  }
+
+  .admin-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #718096;
+    text-align: left;
+  }
+
+  .admin-table td:last-child {
+    padding-top: 8px;
+    border-top: 1px dashed #e2e8f0;
+    margin-top: 4px;
+  }
+
+  .admin-table td:last-child::before {
+    content: none;
+  }
+
+  /* нопки в карточке — поудобнее для пальцев */
+  .admin-table .btn-icon {
+    min-height: 36px;
+    padding: 6px 12px;
+  }
+
+  .user-cell,
+  .role-cell {
+    align-items: flex-end;
+  }
+}
