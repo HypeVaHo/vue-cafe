@@ -1047,33 +1047,268 @@ onMounted(async () => {
   to { transform: rotate(360deg); }
 }
 
+/* ============================================================
+   Мобильная адаптация админки (≤768px)
+   ============================================================ */
 @media (max-width: 768px) {
   .admin-page {
     flex-direction: column;
+    /* sticky-навигация вверху — не «уезжает» при скролле */
+    min-height: 0;
   }
-  
+
+  /* --- Сайдбар превращается в компактную панель с табами --- */
   .admin-sidebar {
+    /* sticky под шапкой сайта (site-header ~72-80px на мобильных) */
+    position: sticky;
+    top: 88px;
+    z-index: 20;
     width: 100%;
+    padding: 0;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
+    background: var(--color-card, #fff);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   }
-  
+
+  .admin-logo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .admin-logo h2 {
+    font-size: 16px;
+    margin: 0;
+  }
+
+  /* Табы: горизонтальный скролл вместо переноса — все пункты
+     доступны одним свайпом, не растягиваются на 2+ строки */
   .admin-nav {
     display: flex;
-    flex-wrap: wrap;
-    padding: 0.5rem;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-  
+
+  .admin-nav::-webkit-scrollbar {
+    display: none;
+  }
+
   .nav-item {
-    flex: 1;
-    min-width: 100px;
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+    font-weight: 600;
     text-align: center;
-    padding: 0.5rem;
+    white-space: nowrap;
   }
-  
+
+  .nav-item.active {
+    background: var(--color-accent, #d4894b);
+    border-color: var(--color-accent, #d4894b);
+    color: #fff;
+  }
+
   .nav-item--back {
     border-top: none;
     margin-top: 0;
+    margin-left: auto;
+  }
+
+  /* --- Контент --- */
+  .admin-content {
+    padding: 14px 12px 24px;
+  }
+
+  .content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  /* Заголовок секции: длинные подписи не разъезжаются */
+  .content-header h1,
+  .content-header h2 {
+    font-size: 20px;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+  }
+
+  .content-header .button {
+    width: 100%;
+    min-height: 44px;
+    font-size: 15px;
+  }
+
+  /* --- Дашборд: 2 колонки на телефоне --- */
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .dash-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .dash-label {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .dash-value {
+    font-size: 22px;
+    line-height: 1.1;
+  }
+
+  /* --- Таблицы: скролл по горизонтали с подсказкой --- */
+  .table-container {
+    border-radius: 12px;
+    position: relative;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 12px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .admin-table td small {
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  /* Действия Ред./Удл. в таблице — удобные тач-таргеты */
+  .btn-icon {
+    min-height: 36px;
+    min-width: 44px;
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .role-select {
+    min-height: 38px;
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* --- Модалка: bottom-sheet на мобильных --- */
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 18px 18px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+  }
+
+  .modal h2 {
+    margin-bottom: 14px;
+    font-size: 19px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .modal-actions .button {
+    width: 100%;
+    min-height: 46px;
+  }
+}
+
+/* ============================================================
+   Очень маленькие экраны (≤480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  /* Шапка ниже — панель табов тоже смещаем меньше */
+  .admin-sidebar {
+    top: 78px;
+  }
+
+  .admin-logo {
+    padding: 8px 12px;
+  }
+
+  .admin-logo h2 {
+    font-size: 15px;
+  }
+
+  .nav-item {
+    min-height: 40px;
+    padding: 6px 14px;
+    font-size: 13.5px;
+  }
+
+  .admin-content {
+    padding: 12px 10px 20px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .dash-value {
+    font-size: 20px;
+  }
+
+  .dash-label {
+    font-size: 11.5px;
+  }
+
+  .content-header h1,
+  .content-header h2 {
+    font-size: 18.5px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 9px 10px;
+    font-size: 13.5px;
+  }
+
+  .btn-icon {
+    min-height: 34px;
+    min-width: 40px;
+    padding: 5px 10px;
+    font-size: 12.5px;
+  }
+
+  /* Очень узкие экраны: таблица заведомо шире — скролл обязателен */
+  .table-container {
+    margin-inline: -2px;
   }
 }
 </style>
