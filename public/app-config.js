@@ -3,6 +3,6 @@
 // logoUrl - logo is always loaded straight from GitHub, so it
 //           does not depend on the local server or the tunnel.
 window.APP_CONFIG = {
-  apiUrl: 'https://perfect-puma-24.loca.lt/api',
+  apiUrl: 'https://ancient-baboon-84.loca.lt/api',
   logoUrl: 'https://hypevaho.github.io/vue-cafe/logo.png'
 };
