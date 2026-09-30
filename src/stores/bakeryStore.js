@@ -185,6 +185,13 @@ function cartCount() {
   return state.cart.reduce((sum, item) => sum + item.qty, 0)
 }
 
+// Сколько единиц конкретного товара сейчас в корзине (0 — товара в корзине нет).
+// Используется для бейджа с количеством прямо на карточке товара.
+function cartQty(productId) {
+  const item = state.cart.find((i) => i.productId === productId)
+  return item ? item.qty : 0
+}
+
 function findProduct(id) {
   return state.products.find((p) => p.id === id) || null
 }
@@ -226,6 +233,7 @@ export function useBakeryStore() {
     state,
     init,
     cartCount,
+    cartQty,
     setCategory,
     addToCart,
     filteredMenuProducts

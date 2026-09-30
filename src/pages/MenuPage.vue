@@ -6,6 +6,9 @@ import { useRouter } from 'vue-router'
 const store = useBakeryStore()
 const router = useRouter()
 
+// Текущее количество товара в корзине — для бейджа на карточке
+const cartQty = store.cartQty
+
 onMounted(() => {
   store.init()
 })
@@ -64,6 +67,27 @@ function addAndGo(productId) {
         >
           <div class="product-card__image-wrap">
             <img class="product-card__image" :src="product.image" :alt="product.name" />
+            <span
+              v-if="cartQty(product.id)"
+              class="product-card__cart-qty"
+              :title="`В корзине: ${cartQty(product.id)} шт.`"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="9.5" cy="20" r="1.4" />
+                <circle cx="18" cy="20" r="1.4" />
+                <path d="M2.5 3h2.2l2.3 12.2h11.4" />
+                <path d="M6.3 6.6h14l-1.6 7.2H7.7" />
+              </svg>
+              {{ cartQty(product.id) }}
+            </span>
             <span v-if="product.popular" class="product-card__flag">Популярно</span>
             <span
               v-else-if="!product.inStock"

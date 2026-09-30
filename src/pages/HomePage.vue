@@ -15,6 +15,9 @@ const heroImage = computed(() => store.state.products[0]?.image || heroImg)
 function addToCart(id) {
   store.addToCart(id, 1)
 }
+
+// Текущее количество товара в корзине — для бейджа на карточке
+const cartQty = store.cartQty
 </script>
 
 <template>
@@ -64,6 +67,27 @@ function addToCart(id) {
         <article class="product-card" v-for="p in popular" :key="p.id">
           <div class="product-card__image-wrap">
             <img class="product-card__image" :src="p.image" :alt="p.name" />
+            <span
+              v-if="cartQty(p.id)"
+              class="product-card__cart-qty"
+              :title="`В корзине: ${cartQty(p.id)} шт.`"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="9.5" cy="20" r="1.4" />
+                <circle cx="18" cy="20" r="1.4" />
+                <path d="M2.5 3h2.2l2.3 12.2h11.4" />
+                <path d="M6.3 6.6h14l-1.6 7.2H7.7" />
+              </svg>
+              {{ cartQty(p.id) }}
+            </span>
           </div>
 
           <div class="product-card__body">

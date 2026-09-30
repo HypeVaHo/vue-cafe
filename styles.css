@@ -700,6 +700,32 @@ button {
   color: #fff;
 }
 
+/* Бейдж с текущим количеством товара в корзине (правый верхний угол фото) */
+.product-card__cart-qty {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(212, 137, 75, 0.38);
+}
+
+.product-card__cart-qty svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
 .product-card__body {
   flex: 1;
   display: flex;
@@ -2244,6 +2270,21 @@ body.mode-auth .site-footer {
     padding: 0 8px;
     font-size: 11px;
     border-radius: 999px;
+  }
+
+  .product-card__cart-qty {
+    top: 6px;
+    right: 6px;
+    min-width: 24px;
+    min-height: 24px;
+    gap: 4px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .product-card__cart-qty svg {
+    width: 12px;
+    height: 12px;
   }
 
   .product-card__body {
